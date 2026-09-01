@@ -37,6 +37,9 @@ class TemplateAnswerer:
     """
 
     name = "template"
+    # This polisher removes disfluencies and nothing else. It does NOT apply a
+    # stated style, so the interface must not claim it did.
+    applies_style = False
 
     def compose(self, query: str, rows: list[Any], style: dict[str, Any] | None = None) -> dict[str, Any]:
         primary = rows[0]
@@ -120,6 +123,7 @@ ANSWER_SCHEMA = {
 
 class LlmAnswerer:
     name = "llm"
+    applies_style = True
 
     def __init__(self, client: OllamaClient, config: KiviConfig) -> None:
         self.client = client

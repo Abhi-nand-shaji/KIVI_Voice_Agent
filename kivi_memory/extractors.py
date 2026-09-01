@@ -164,8 +164,10 @@ class RuleExtractor:
             return f"For {project}, user is using {readable}."
         if predicate == "current_focus_is":
             return f"User's current focus is {object_}."
-        if predicate == "prefers_assistant_behaviour":
-            return f"User asked the assistant to {object_}."
+        if predicate.startswith("instructed_not_to_"):
+            return f"User asked the assistant not to {object_}."
+        if predicate.startswith("instructed_always_"):
+            return f"User asked the assistant to always {object_}."
         if predicate.startswith("prefers_"):
             return f"User prefers {object_}."
         if predicate.startswith("avoids_"):
@@ -204,7 +206,15 @@ class RuleExtractor:
         forward_looking = re.search(
             r"\b(need|needs|must|should|will|going to|prefer|prefers|use|using|deadline|remind)\b", lower
         )
-        return bool(past_tense) and not forward_looking
+        # Anything carrying a date, a weekday or a scheduling verb is about
+        # future coordination, however it is phrased. "The migration has been
+        # shifted to Thursday" is past tense but it is not small talk.
+        scheduled = re.search(
+            r"\b(monday|tuesday|wednesday|thursday|thurs|friday|saturday|sunday|today|tomorrow|"
+            r"tonight|next week|this week|deadline|due|shifted|moved|postponed|rescheduled|"
+            r"meeting|call|standup|review|\d{1,2}[/-]\d{1,2}|\d{1,2}\s*(?:am|pm))\b", lower
+        )
+        return bool(past_tense) and not forward_looking and not scheduled
 
     def _explicitly_low_value(self, lower: str) -> bool:
         """An explicit instruction from the user, not a guess about the topic."""

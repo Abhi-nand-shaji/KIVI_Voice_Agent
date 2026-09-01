@@ -91,9 +91,9 @@ That is exactly the condition the reviewer's corpus creates, and the evaluation 
 - **10 controller checks** — provenance on every memory, rejection actually happening, reinforcement rather than duplication, forgetting that archives and logs, evidence spanning more than one dictation, sublinear growth, and three probes asserting that a weak candidate is rejected, a hedged claim stays tentative, and a weak contradiction does *not* overturn an established memory.
 - **5 admission checks** — a small hand-labelled set with fixed confidence/importance values, saying where the admission line should sit.
 
-**Deterministic path: 19/21** (4/6 · 10/10 · 5/5), about 4 seconds end to end.
+**Deterministic path: 20/21** (5/6 · 10/10 · 5/5), about 4 seconds end to end.
 
-The two answer misses are real and left visible. A hashed bag-of-words cannot bridge "response style" → "concise technical explanations", or "assignment" → "internship task". Kivi abstains rather than guessing, which is the correct failure, and it is the case the embedding backend exists to fix.
+The one remaining answer miss is real and left visible: a hashed bag-of-words cannot bridge "assignment" to "internship task", so Kivi abstains rather than guessing. That is the correct failure, and it is the case the embedding backend exists to fix.
 
 ### Cost, latency, growth
 

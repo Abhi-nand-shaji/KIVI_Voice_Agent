@@ -163,7 +163,7 @@ SYNONYMS: dict[str, str] = {}
 EXCLUSIVE_PREDICATE_NAMES = {"works_at", "based_in", "is_a", "uses_tool"}
 
 # Relations that are naturally multi-valued: two of them are not in conflict.
-MULTI_VALUED_PREFIXES = ("has_", "avoids_", "needs_", "mentioned_")
+MULTI_VALUED_PREFIXES = ("has_", "avoids_", "needs_", "mentioned_", "instructed_")
 MULTI_VALUED_NAMES = {"needs_to_do", "mentioned_event", "prefers_assistant_behaviour"}
 
 

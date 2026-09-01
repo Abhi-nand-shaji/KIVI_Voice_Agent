@@ -251,16 +251,23 @@ class KiviMemoryEngine:
             style_rows = conn.execute(
                 """
                 SELECT * FROM memories
-                WHERE status IN ('active', 'tentative') AND predicate LIKE 'prefers%'
+                WHERE status IN ('active', 'tentative')
+                  AND scope = 'communication'
+                  AND predicate LIKE 'prefers_%'
                 ORDER BY confidence DESC LIMIT 4
                 """
             ).fetchall()
             claims = [row["canonical_text"] for row in style_rows]
             formatted = self.answerer.polish(raw, claims)
+            # Only claim a preference was used if the polisher can actually use
+            # one. The template polisher cleans disfluencies and deliberately
+            # applies no style, so reporting "written using 4 things Kivi knows
+            # about you" would be false - and a memory product that overstates
+            # what it did is worse than one that stays quiet.
             applied = [
                 {"id": row["id"], "claim": self._fragment(row["canonical_text"])}
                 for row in style_rows
-            ]
+            ] if getattr(self.answerer, "applies_style", False) else []
 
         record["formatted_text"] = formatted
         result = self.ingest_record(record)
@@ -803,16 +810,30 @@ class KiviMemoryEngine:
             LEFT JOIN transcripts t ON t.id = d.transcript_id
             WHERE d.action IN ('NO_OP', 'REJECT')
             ORDER BY d.created_at DESC
-            LIMIT 8
+            LIMIT 200
             """
         ).fetchall()
         if not rows:
             return self._abstain("I do not have ignored-memory decisions to show yet.", "No NO_OP or REJECT decisions.")
+        # One line per distinct reason with a single example, plus how many
+        # others it stood for. The previous version listed the eight most recent
+        # rows, which on a real corpus means the same sentence six times.
         source_transcripts = []
         lines = []
+        seen: dict[str, int] = {}
+        chosen: list[tuple[str, str]] = []
         for row in rows:
+            reason = str(row["reason"])
+            seen[reason] = seen.get(reason, 0) + 1
+            if reason not in {item[0] for item in chosen}:
+                text = row["formatted_text"] or json.loads(row["candidate_json"]).get("ignored_text", "")
+                chosen.append((reason, text))
+        for reason, text in chosen[:6]:
+            others = seen[reason] - 1
+            suffix = f" (and {others} more like it)" if others else ""
+            lines.append(f"- {reason}{suffix}\n    e.g. \"{snippet(text, limit=90)}\"")
+        for row in rows[:8]:
             text = row["formatted_text"] or json.loads(row["candidate_json"]).get("ignored_text", "")
-            lines.append(f"- {row['reason']} Source: {snippet(text, limit=90)}")
             if row["transcript_id"]:
                 source_transcripts.append({
                     "id": row["transcript_id"],
@@ -1082,7 +1103,9 @@ class KiviMemoryEngine:
         claims = [row["canonical_text"] for row in conn.execute(
             """
             SELECT canonical_text FROM memories
-            WHERE status IN ('active', 'tentative') AND predicate LIKE 'prefers%'
+            WHERE status IN ('active', 'tentative')
+              AND scope = 'communication'
+              AND predicate LIKE 'prefers_%'
             ORDER BY confidence DESC LIMIT 4
             """
         )]

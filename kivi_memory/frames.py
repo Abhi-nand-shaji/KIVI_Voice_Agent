@@ -76,12 +76,22 @@ def slug(value: str, max_words: int = 4) -> str:
 
 
 def head_noun(value: str) -> str:
-    """Last content word of a phrase - a serviceable topic key without a POS tagger."""
+    """Last content word of a phrase, singularised - the topic key for a predicate.
+
+    Stemming matters here more than it looks. The head noun becomes part of the
+    predicate name, and the predicate name is the memory's identity. Without it,
+    "concise explanation" and "concise technical explanations" produce
+    `prefers_explanation` and `prefers_explanations` - two separate memories for
+    one preference, neither of which supersedes the other when the user changes
+    their mind. Same word, same relation, same memory.
+    """
+    from .core import stem  # noqa: PLC0415  (core does not import frames)
+
     words = [w for w in re.findall(r"[a-z0-9]+", value.lower()) if len(w) > 2]
     for word in reversed(words):
         if word not in WEAK_HEADS:
-            return word
-    return words[-1] if words else "general"
+            return stem(word)
+    return stem(words[-1]) if words else "general"
 
 
 # Words that are never the name of a project or piece of work. Prevents
@@ -214,11 +224,22 @@ def _event(match: re.Match) -> dict[str, Any] | None:
 
 
 def _instruction(prefix: str):
+    """A standing instruction to the assistant.
+
+    Deliberately NOT named `prefers_*`. A single catch-all preference predicate
+    matched every question containing the word "prefer", so "what response style
+    do I prefer?" was answered with "you asked the assistant to avoid make me
+    approve every memory". Naming the relation after what it is about keeps it
+    out of unrelated queries, and reads as a sentence.
+    """
     def build(match: re.Match) -> dict[str, Any] | None:
         value = clean_object(match.group(1), max_words=14)
         if not value or len(value) < 4:
             return None
-        return {"predicate": "prefers_assistant_behaviour", "object": f"{prefix} {value}"}
+        return {
+            "predicate": f"instructed_{'not_to' if prefix == 'avoid' else 'always'}_{head_noun(value)}",
+            "object": value,
+        }
     return build
 
 

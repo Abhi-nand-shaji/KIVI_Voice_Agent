@@ -1,0 +1,134 @@
+{
+  "backends": {
+    "answerer": {
+      "backend": "template",
+      "generated": false
+    },
+    "config": {
+      "answerer": "template",
+      "api_key_present": false,
+      "api_style": "ollama",
+      "embed_model": "nomic-embed-text",
+      "endpoint": "http://127.0.0.1:11434",
+      "extractor": "rule",
+      "llm_model": "qwen2.5:7b-instruct",
+      "nli": "off",
+      "nli_model": "qwen2.5:7b-instruct",
+      "ollama_host": "http://127.0.0.1:11434",
+      "retrieval": "lexical"
+    },
+    "embedder": {
+      "backend": "hash-bow",
+      "dim": 256,
+      "semantic": false
+    },
+    "extractor": {
+      "backend": "rule"
+    },
+    "nli": {
+      "backend": "off",
+      "real_nli": false
+    },
+    "ollama": {
+      "note": "not required in this mode",
+      "reachable": false
+    },
+    "router": {
+      "backend": "exemplar(hash-bow)"
+    }
+  },
+  "database": {
+    "backends": {
+      "answerer": {
+        "backend": "template",
+        "generated": false
+      },
+      "config": {
+        "answerer": "template",
+        "api_key_present": false,
+        "api_style": "ollama",
+        "embed_model": "nomic-embed-text",
+        "endpoint": "http://127.0.0.1:11434",
+        "extractor": "rule",
+        "llm_model": "qwen2.5:7b-instruct",
+        "nli": "off",
+        "nli_model": "qwen2.5:7b-instruct",
+        "ollama_host": "http://127.0.0.1:11434",
+        "retrieval": "lexical"
+      },
+      "embedder": {
+        "backend": "hash-bow",
+        "dim": 256,
+        "semantic": false
+      },
+      "extractor": {
+        "backend": "rule"
+      },
+      "nli": {
+        "backend": "off",
+        "real_nli": false
+      },
+      "ollama": {
+        "note": "not required in this mode",
+        "reachable": false
+      },
+      "router": {
+        "backend": "exemplar(hash-bow)"
+      }
+    },
+    "counts": {
+      "decisions": 501,
+      "memories": 24,
+      "memory_evidence": 177,
+      "transcripts": 500
+    },
+    "decisions_by_action": {
+      "ADD": 22,
+      "NO_OP": 324,
+      "REINFORCE": 152,
+      "UPDATE": 3
+    },
+    "decisions_with_nli": 0,
+    "memories_by_source": {
+      "rule": 24
+    },
+    "memories_by_status": {
+      "active": 22,
+      "archived": 2
+    }
+  },
+  "decisions": 501,
+  "growth": {
+    "bytes_per_transcript": 3399.7,
+    "latest": {
+      "active_memories": 22,
+      "db_bytes": 1699840,
+      "decisions": 501,
+      "embedding_rows": 524,
+      "evidence_rows": 177,
+      "id": 10,
+      "memories": 24,
+      "sampled_at": "2026-09-01 14:47:37",
+      "transcripts": 500
+    },
+    "memories_per_100_transcripts": 4.4,
+    "selectivity": 0.956
+  },
+  "latency": {
+    "inside_model_calls_ms": 0.0,
+    "per_model_call_ms": 0.0,
+    "per_record_ms": 2.78,
+    "share_of_time_in_model": 0.0,
+    "total_ms": 1387.84
+  },
+  "model_usage": {
+    "chat_calls": 0,
+    "embed_calls": 0,
+    "estimated_cost_usd": 0.0,
+    "external_api_calls": 0,
+    "note": "Deterministic mode: no model calls at all."
+  },
+  "recorded_at": "2026-09-01T14:47:37",
+  "records_processed": 500,
+  "source": "data/seed_corpus.jsonl"
+}

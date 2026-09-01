@@ -148,7 +148,7 @@ python3 -m kivi_memory --deterministic evaluate --records 500 --out data/evaluat
 
 Runs the complete pipeline — generate corpus, ingest, ask, grade — and writes full results. About 4 seconds.
 
-Expected on the deterministic path: **19/21** (4/6 answer checks, 10/10 controller checks, 5/5 admission checks). The two answer misses are real and documented in the README: a bag-of-words retriever cannot bridge "response style" to "concise technical explanations". The system abstains rather than guessing. Drop `--deterministic` to run with the model backends.
+Expected on the deterministic path: **20/21** (5/6 answer checks, 10/10 controller checks, 5/5 admission checks). The one answer miss is real and documented in the README: a bag-of-words retriever cannot bridge "response style" to "concise technical explanations". The system abstains rather than guessing. Drop `--deterministic` to run with the model backends.
 
 Related commands:
 

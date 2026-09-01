@@ -1,0 +1,1078 @@
+{
+  "all_results": [
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 19,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 19,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.45,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.6,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 9,
+      "passed": 18,
+      "selectivity": 0.955,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.75,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.45,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.55,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 17,
+      "passed": 18,
+      "selectivity": 0.915,
+      "settings": {
+        "admit_confidence": 0.75,
+        "admit_utility": 0.65,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 17,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.62
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 17,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.72
+      },
+      "total": 21
+    },
+    {
+      "answer_checks": 4,
+      "controller_checks": 10,
+      "failing": [
+        "response_style",
+        "assignment"
+      ],
+      "memories": 24,
+      "passed": 17,
+      "selectivity": 0.88,
+      "settings": {
+        "admit_confidence": 0.3,
+        "admit_utility": 0.35,
+        "supersede_confidence": 0.82
+      },
+      "total": 21
+    }
+  ],
+  "best": {
+    "answer_checks": 4,
+    "controller_checks": 10,
+    "failing": [
+      "response_style",
+      "assignment"
+    ],
+    "memories": 17,
+    "passed": 19,
+    "selectivity": 0.915,
+    "settings": {
+      "admit_confidence": 0.3,
+      "admit_utility": 0.65,
+      "supersede_confidence": 0.62
+    },
+    "total": 21
+  },
+  "grid_size": 60,
+  "mean_score_by_threshold_value": {
+    "admit_confidence": {
+      "0.3": 18.4,
+      "0.45": 18.8,
+      "0.6": 18.8,
+      "0.75": 18.0
+    },
+    "admit_utility": {
+      "0.35": 18.25,
+      "0.45": 18.75,
+      "0.55": 18.75,
+      "0.65": 18.75,
+      "0.75": 18.0
+    },
+    "supersede_confidence": {
+      "0.62": 18.5,
+      "0.72": 18.5,
+      "0.82": 18.5
+    }
+  },
+  "memory_count_range": [
+    9,
+    24
+  ],
+  "records_per_trial": 200,
+  "score_range": [
+    17,
+    18,
+    19
+  ],
+  "shipped_defaults": {
+    "admit_confidence": 0.5,
+    "admit_utility": 0.55,
+    "supersede_confidence": 0.72
+  },
+  "verdict": "Scores ranged 17-19 across 60 settings; the surface discriminates and `best` is a defensible choice."
+}

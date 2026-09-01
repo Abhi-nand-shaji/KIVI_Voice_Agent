@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kivi</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">Kivi</span>
+      </div>
+      <p class="tagline">You talk. Kivi writes it the way you write, and remembers what matters.</p>
+    </header>
+
+    <nav class="modes" role="tablist" aria-label="Kivi modes">
+      <button class="mode is-active" role="tab" id="tab-dictate" aria-controls="panel-dictate" aria-selected="true" data-mode="dictate" type="button">
+        <span class="mode-name">Dictate</span>
+        <span class="mode-sub">Speak &rarr; polished text</span>
+      </button>
+      <button class="mode" role="tab" id="tab-ask" aria-controls="panel-ask" aria-selected="false" tabindex="-1" data-mode="ask" type="button">
+        <span class="mode-name">Hey Kivi</span>
+        <span class="mode-sub">Ask about your own words</span>
+      </button>
+      <span class="mode-divider" aria-hidden="true"></span>
+      <button class="mode mode-quiet" role="tab" id="tab-knows" aria-controls="panel-knows" aria-selected="false" tabindex="-1" data-mode="knows" type="button">
+        <span class="mode-name">What Kivi knows</span>
+        <span class="mode-sub" id="knows-count">&nbsp;</span>
+      </button>
+    </nav>
+
+    <main id="main">
+      <!-- ── DICTATE ─────────────────────────────────────────────── -->
+      <section class="panel" id="panel-dictate" role="tabpanel" aria-labelledby="tab-dictate" tabindex="0">
+        <form id="dictate-form" class="composer" novalidate>
+          <div class="composer-head">
+            <label class="field-label" for="dictate-text">What did you just say?</label>
+            <div class="app-picker">
+              <label class="field-label subtle" for="dictate-app">Writing into</label>
+              <select id="dictate-app" name="app">
+                <option value="slack">Slack</option>
+                <option value="email">Email</option>
+                <option value="notes">Notes</option>
+                <option value="docs">Docs</option>
+                <option value="messages">Messages</option>
+              </select>
+            </div>
+          </div>
+          <textarea id="dictate-text" name="text" rows="5" spellcheck="true"
+            placeholder="so um can you let the team know the migration slipped to thursday, we found two more edge cases in the importer and i'd rather ship it right"></textarea>
+          <div class="composer-foot">
+            <p class="hint">In the real product you hold the mic. Here, type it as you would say it.</p>
+            <button class="btn btn-primary" type="submit" id="dictate-submit">Write it</button>
+          </div>
+        </form>
+
+        <div class="result-region" id="dictate-region" aria-live="polite" aria-busy="false">
+          <div class="empty-state" id="dictate-empty">
+            <span class="empty-mark" aria-hidden="true"></span>
+            <h2>Nothing dictated yet</h2>
+            <p>Say something above and Kivi will write it out. It uses what it already knows about how you write &mdash; and quietly picks up anything new.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── HEY KIVI ────────────────────────────────────────────── -->
+      <section class="panel" id="panel-ask" role="tabpanel" aria-labelledby="tab-ask" tabindex="0" hidden>
+        <div class="thread" id="thread" aria-live="polite" aria-busy="false">
+          <div class="empty-state" id="ask-empty">
+            <span class="empty-mark" aria-hidden="true"></span>
+            <h2>Ask Kivi about your own words</h2>
+            <p>Hey Kivi answers from things you have actually dictated. If it does not know, it says so rather than guessing.</p>
+            <div class="starters">
+              <button class="chip" type="button" data-starter="What do you know about how I like things written?">What do you know about how I write?</button>
+              <button class="chip" type="button" data-starter="Find the dictation I did in Slack yesterday and polish it for the meeting.">Find yesterday's Slack dictation</button>
+              <button class="chip" type="button" data-starter="What did you decide not to remember?">What did you skip remembering?</button>
+            </div>
+          </div>
+        </div>
+
+        <form id="ask-form" class="ask-bar" novalidate>
+          <label class="sr-only" for="ask-input">Ask Hey Kivi</label>
+          <input id="ask-input" type="text" autocomplete="off" placeholder="Hey Kivi&hellip;">
+          <button class="btn btn-primary" type="submit" id="ask-submit">Ask</button>
+        </form>
+      </section>
+
+      <!-- ── WHAT KIVI KNOWS ─────────────────────────────────────── -->
+      <section class="panel" id="panel-knows" role="tabpanel" aria-labelledby="tab-knows" tabindex="0" hidden>
+        <div class="panel-intro">
+          <h2>What Kivi knows about you</h2>
+          <p>Everything here was picked up from your own dictations. Forget anything you would rather it did not keep &mdash; it stops using it straight away.</p>
+        </div>
+        <div id="knows-list" class="knows-list" aria-live="polite" aria-busy="false"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="footer-note">Kivi keeps this on your device. Nothing here is shared.</p>
+      <button class="eng-link" type="button" id="eng-toggle" aria-expanded="false" aria-controls="engineering">Engineering view</button>
+    </footer>
+
+    <section class="engineering" id="engineering" aria-label="Engineering view" hidden>
+      <div class="eng-head">
+        <h2>Engineering view</h2>
+        <button class="btn btn-ghost btn-sm" type="button" id="eng-refresh">Refresh</button>
+      </div>
+      <div class="eng-banner" id="eng-backends">Checking model backends&hellip;</div>
+      <div class="eng-stats" id="eng-stats"></div>
+      <h3 class="eng-sub">Controller decision log</h3>
+      <div class="eng-log" id="eng-decisions"></div>
+    </section>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

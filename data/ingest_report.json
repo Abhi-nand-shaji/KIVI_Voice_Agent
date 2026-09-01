@@ -108,7 +108,7 @@
       "evidence_rows": 177,
       "id": 10,
       "memories": 24,
-      "sampled_at": "2026-09-01 14:47:37",
+      "sampled_at": "2026-09-01 14:54:58",
       "transcripts": 500
     },
     "memories_per_100_transcripts": 4.4,
@@ -117,9 +117,9 @@
   "latency": {
     "inside_model_calls_ms": 0.0,
     "per_model_call_ms": 0.0,
-    "per_record_ms": 2.78,
+    "per_record_ms": 138.73,
     "share_of_time_in_model": 0.0,
-    "total_ms": 1387.84
+    "total_ms": 69364.19
   },
   "model_usage": {
     "chat_calls": 0,
@@ -128,7 +128,7 @@
     "external_api_calls": 0,
     "note": "Deterministic mode: no model calls at all."
   },
-  "recorded_at": "2026-09-01T14:47:37",
+  "recorded_at": "2026-09-01T14:54:58",
   "records_processed": 500,
   "source": "data/seed_corpus.jsonl"
 }

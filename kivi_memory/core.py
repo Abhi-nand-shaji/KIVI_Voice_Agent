@@ -13,7 +13,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 
 MEMORY_TYPES = ("preference", "fact", "project_state", "task", "event")

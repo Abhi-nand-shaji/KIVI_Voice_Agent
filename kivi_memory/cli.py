@@ -4,10 +4,11 @@ import argparse
 import json
 from pathlib import Path
 
+from .calibration import calibrate
 from .config import ANSWERER_MODES, EXTRACTOR_MODES, KiviConfig, NLI_MODES, RETRIEVAL_MODES
 from .db import connect, migrate, reset_database
 from .engine import KiviMemoryEngine
-from .evaluation import calibrate, compare_backends, run_evaluation
+from .evaluation import compare_backends, run_evaluation
 from .llm import get_client
 from .seed import generate_corpus, read_jsonl, write_jsonl
 from .server import serve

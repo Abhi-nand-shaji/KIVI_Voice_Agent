@@ -35,7 +35,13 @@ CLAUSE_BREAK = re.compile(
 
 TRAILING_NOISE = re.compile(
     r"\s+(?:for now|right now|now|these days|at the moment|today|currently|"
-    r"anymore|any more|going forward|from now on|please|thanks)\b\.?$",
+    r"anymore|any more|going forward|from now on|please|thanks|"
+    # When something happened is not part of what it is. "We switched the
+    # prototype to Rust last week" is a claim about Rust, not about last week;
+    # leaving the phrase on produced the value "rust last week", which then
+    # fails to match a later mention of plain "rust".
+    r"last (?:week|month|year|night)|yesterday|this (?:week|month|morning|afternoon|evening))"
+    r"\b\.?$",
     re.IGNORECASE,
 )
 
@@ -197,8 +203,18 @@ def _valid_project(project: str) -> bool:
 
 
 def _trim_tool(value: str) -> str:
-    """A tool name ends where the sentence starts comparing it to something."""
-    return re.split(r"\s+(?:with|instead of|rather than|over|and not)\s+", value, maxsplit=1)[0].strip()
+    """A tool name is a noun phrase, and it ends where the sentence moves on.
+
+    Two ways it runs long. A comparison - "Rust instead of Python" - and a
+    trailing prepositional phrase, which is what the greedy capture in
+    `project_tool_for` produces: "For the Golden Goose task I am prototyping in
+    Python for the semantic memory work" yielded the tool
+    "python for the semantic memory work", which then matches nothing when the
+    same project is mentioned again with plain "Python".
+    """
+    trimmed = re.split(
+        r"\s+(?:with|instead of|rather than|over|and not)\s+", value, maxsplit=1)[0].strip()
+    return (PREPOSITIONAL_TAIL.sub("", trimmed).strip() or trimmed).strip()
 
 
 def _project_tool(project_group: int, tool_group: int):
@@ -303,7 +319,10 @@ FRAMES: list[Frame] = [
           "project_state", "", 0.82, 0.82, 0.05, _project_tool(2, 1), "Tool choice on a named piece of work.", family="project_tool"),
     Frame("moved_project_tool", r"\bwe (?:moved|switched|took) (?:the )?([^.,;]{3,50}?) (?:off|from) [^.,;]{2,40}? to ([^.,;]{2,50})",
           "project_state", "", 0.88, 0.9, 0.05, _project_switch, "Explicit change of tool on a named piece of work.", family="project_tool"),
-    Frame("switched_project", r"\bi (?:switched|moved) (?:the )?([^.,;]{3,50}?) to ([^.,;]{2,50})",
+    # "we" as well as "i": a tool decision is usually reported in the first
+    # person plural, and the frame that handled "we" required an explicit
+    # "off"/"from", so "we switched the prototype to Rust" matched neither.
+    Frame("switched_project", r"\b(?:i|we) (?:switched|moved|migrated|ported) (?:the )?([^.,;]{3,50}?) to ([^.,;]{2,50})",
           "project_state", "", 0.88, 0.9, 0.05, _project_switch, "Explicit change on a named piece of work.", family="project_tool"),
     Frame("focus", r"\b(?:the )?([^.,;]{3,50}?) is (?:the main thing on my plate|my main focus|my priority|the priority)",
           "project_state", "current_focus", 0.84, 0.86, 0.06, _focus, "Stated current focus."),

@@ -93,12 +93,15 @@ Measured on the 500-record corpus (`python3 -m tests.cascade_curve`, needs no mo
 
 | `escalate_below` | model calls | saved vs `hybrid` |
 |---|---|---|
-| 0.70 (default) | 257 / 500 | **49%** |
-| 0.75 | 299 / 500 | 40% |
-| 0.80 | 361 / 500 | 28% |
-| 1.00 (≡ hybrid on parsed records) | 364 / 500 | 27% |
+| 0.70 (default) | 303 / 500 | **39%** |
+| 0.75 | 345 / 500 | 31% |
+| 0.80 | 407 / 500 | 19% |
 
-49%, not the 70% a first guess suggests: this corpus is 38% transcripts no frame matches, and those all escalate. The number is measured rather than asserted, which is the point of putting the decision where it can be swept.
+39%, not the 70% a first guess suggests: this corpus is 47% transcripts no frame matches, and those all escalate. The number is measured rather than asserted, which is the point of putting the decision where it can be swept.
+
+An earlier version of this saved 49% by also treating "this looks ephemeral" as settled. That was wrong. *"We switched the Golden Goose prototype to Rust last week"* was scored ephemeral by the heuristic — past tense, no scheduling word — so the cascade never escalated and a real project-state change was dropped silently. A heuristic's **guess** must never be the reason the second sensor goes unconsulted; only an explicit instruction from the person is. Ten points of cost saving for a class of silent data loss is a bad trade, and the failure only appeared because the walkthrough traced a real sequence rather than testing layers in isolation.
+
+`python3 -m tests.escalation_walkthrough` runs the whole proposition end to end on six dictations — frames-only, escalated, both-sensors, an NLI-caught contradiction, an escalation that is still rejected, and a retraction — then asks four questions. 13 checks, no model needed.
 
 ## Why extraction is domain-free
 
@@ -158,6 +161,7 @@ Stated plainly, because several of them are the interesting part.
 - **mem0 was considered and not used.** It is the closest prior art and is well-engineered. It was rejected because its update step delegates the retain/update/delete decision to the LLM, which is precisely the decision this system exists to make inspectable — and because it has no zero-install path. The controller is storage-agnostic, so adopting mem0 for extraction and retrieval while keeping decision authority here (`add(..., infer=False)`) is a config change rather than a rewrite.
 - **`OllamaNLI` is an instruct model prompted as a classifier.** It is real inference and beats the old whitelist, but a dedicated cross-encoder is better calibrated — `pip install torch transformers` and `--nli cross-encoder`.
 - **Retrieval scans all active memories.** Fine at this scale, needs an ANN index at production scale.
+- **Scopes are not unified.** A project named two ways — "the Golden Goose task" and "the Golden Goose prototype" — produces two scope slugs, and conflict detection is restricted to the same `(subject, scope)` pair. So a superseded claim under a differently-named scope survives. `tests/escalation_walkthrough.py` prints this happening rather than hiding it. The fix is scope clustering by embedding similarity; it is not implemented.
 - **NLI may only archive memories for `preference`, `fact` and `project_state`.** Tasks and events are multi-valued; a model that judged two to-dos "contradictory" would quietly delete a task list. That constraint is in the controller, not the prompt.
 - **The seed corpus is synthetic and its anchors are known**, so its accuracy measures wiring and policy, not real-world extraction quality. `tests/foreign_corpus.py` exists because of this.
 - **The interface has no audio.** Dictation is typed. The assignment does not require speech recognition, and nothing downstream depends on where the text came from.
@@ -187,6 +191,6 @@ kivi_memory/
   server.py       the local HTTP API
 web/              the interface
 tests/            fake_ollama.py, run_llm_path.py (27 checks), foreign_corpus.py,
-                  nli_demo.py, cascade_curve.py
+                  escalation_walkthrough.py (13 checks), nli_demo.py, cascade_curve.py
 docs/             product positioning and vision (candidate's own writing)
 ```

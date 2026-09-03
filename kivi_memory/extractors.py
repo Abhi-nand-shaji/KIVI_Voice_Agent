@@ -44,17 +44,24 @@ from .frames import (
 from .llm import OllamaClient
 
 
-# Why a transcript produced no candidates. The first two are *positive*
-# determinations - the frames concluded there is nothing here to remember - and
-# the third is an admission of failure. The cascade needs the difference: it
-# must not spend a model call re-litigating a decision the frames already made
-# correctly, and must never let a model override an explicit "don't remember
-# this".
+# Why a transcript produced no candidates.
+#
+# The cascade treats exactly one of these as final. IGNORED_SUPPRESSED is a
+# direct instruction from the person - authoritative, and escalating it would
+# let a model extract from a transcript they asked not to be remembered.
+#
+# IGNORED_EPHEMERAL is a *guess* by a heuristic, and an earlier version of this
+# file treated it as final too. That was wrong, and the failure is instructive:
+# "We switched the Golden Goose prototype to Rust last week" was scored
+# ephemeral (past tense, no scheduling word), so the cascade never escalated
+# and a real project-state change was silently dropped - a frame bug that the
+# model would otherwise have caught. A heuristic's guess must never be the
+# reason the second sensor is not consulted. Only an explicit instruction is.
 IGNORED_SUPPRESSED = "The user explicitly asked for this not to be remembered."
 IGNORED_EPHEMERAL = "Ephemeral personal remark with no durable claim in it."
 IGNORED_NO_CLAIM = "No first-person claim, preference, commitment, or event was stated."
 
-SETTLED_REASONS = (IGNORED_SUPPRESSED, IGNORED_EPHEMERAL)
+SETTLED_REASONS = (IGNORED_SUPPRESSED,)
 
 
 class RuleExtractor:
@@ -230,7 +237,16 @@ class RuleExtractor:
             r"tonight|next week|this week|deadline|due|shifted|moved|postponed|rescheduled|"
             r"meeting|call|standup|review|\d{1,2}[/-]\d{1,2}|\d{1,2}\s*(?:am|pm))\b", lower
         )
-        return bool(past_tense) and not forward_looking and not scheduled
+        # A change of state is durable however far in the past it happened.
+        # "We switched the prototype to Rust last week" is past tense with no
+        # scheduling word, and the two tests above therefore both missed it -
+        # yet the claim it makes is true until something switches back.
+        state_change = re.search(
+            r"\b(switch\w*|migrat\w*|adopt\w*|replac\w*|dropp\w*|abandon\w*|"
+            r"rewrote|rewritten|ported|upgrad\w*|renamed|promoted|joined|left|"
+            r"started using|stopped using|no longer)\b", lower
+        )
+        return bool(past_tense) and not forward_looking and not scheduled and not state_change
 
     # A retraction is grammar, not vocabulary. The literal-phrase list this
     # replaces missed "do not remember any of this" while catching "do not

@@ -132,7 +132,7 @@ def main() -> int:
 
         def candidate(city: str, confidence: float) -> Candidate:
             return Candidate(
-                memory_type="fact", subject="user", predicate="home_base",  # NOT in EXCLUSIVE_PREDICATES
+                memory_type="fact", subject="user", predicate="home_base",  # not exclusive: no _is suffix, no prefers_ prefix
                 object=city, scope="profile",
                 canonical_text=f"User currently lives in {city.title()}.",
                 evidence=f"I live in {city.title()}.", importance=0.85, confidence=confidence,
@@ -231,6 +231,68 @@ def main() -> int:
         check("a learned memory can be dropped from the interface",
               forgotten["ok"] and forgotten["memory"]["status"] == "archived",
               str(forgotten.get("memory", {}).get("status")))
+
+        # 5d -- cascade escalation --------------------------------------------
+        # The point of the cascade is that the model is consulted only where the
+        # frames demonstrably fell short, so these check the *decision*, not the
+        # model's output: a clean record must cost zero model calls, and each of
+        # the three escalation triggers must fire on its own.
+        from kivi_memory.extractors import (  # noqa: PLC0415
+            CascadeExtractor, LlmExtractor, RuleExtractor,
+        )
+
+        casc_config = make_config(tmp, extractor="cascade")
+        cascade = CascadeExtractor(
+            RuleExtractor(), LlmExtractor(OllamaClient(casc_config), casc_config), casc_config)
+
+        clean = record(1, "I work at Zerodha.", "2026-08-01T10:00:00")
+        cascade.extract(clean)
+        check("cascade: a cleanly parsed record costs no model call",
+              cascade.escalated == 0,
+              f"{cascade.escalated}/{cascade.seen} escalated")
+
+        unparseable = record(2, "The quarterly numbers came in higher than the board expected.",
+                             "2026-08-02T10:00:00")
+        rule_only, _ = RuleExtractor().extract(unparseable)
+        reason_none = cascade._escalation_reason(unparseable["formatted_text"], rule_only)
+        check("cascade: escalates when no frame matched",
+              rule_only == [] and reason_none is not None and "no frame matched" in reason_none,
+              str(reason_none))
+
+        partial = record(3, "I work at Zerodha, and the quarterly retention numbers came in "
+                            "far above what the board expected.", "2026-08-03T10:00:00")
+        partial_cands, _ = RuleExtractor().extract(partial)
+        covered = CascadeExtractor.coverage(partial["formatted_text"], partial_cands)
+        reason_cov = cascade._escalation_reason(partial["formatted_text"], partial_cands)
+        check("cascade: escalates on low coverage even when the frame was confident",
+              partial_cands
+              and max(c.confidence for c in partial_cands) >= casc_config.escalate_below
+              and covered < casc_config.escalate_coverage
+              and reason_cov is not None and "covered" in reason_cov,
+              f"coverage={covered:.0%}, reason={reason_cov}")
+
+        hedged = record(4, "I think I prefer shorter summaries.", "2026-08-04T10:00:00")
+        hedged_cands, _ = RuleExtractor().extract(hedged)
+        reason_conf = cascade._escalation_reason(hedged["formatted_text"], hedged_cands)
+        check("cascade: escalates when the frame matched but was not confident",
+              hedged_cands
+              and max(c.confidence for c in hedged_cands) < casc_config.escalate_below
+              and reason_conf is not None and "confidence" in reason_conf,
+              str(reason_conf))
+
+        suppressed = record(5, "Do not remember any of this, it is just me thinking aloud "
+                               "about whether to reorganise the whole team.", "2026-08-05T10:00:00")
+        supp_cands, supp_ignored = RuleExtractor().extract(suppressed)
+        reason_supp = cascade._escalation_reason(
+            suppressed["formatted_text"], supp_cands, supp_ignored)
+        check("cascade: never escalates a transcript the person asked not to remember",
+              supp_cands == [] and reason_supp is None,
+              f"ignored={supp_ignored}, reason={reason_supp}")
+
+        check("cascade: escalation rate is reported for the cost/recall curve",
+              "escalation_rate" in cascade.describe()
+              and cascade.describe()["backend"] == "cascade(rule->llm)",
+              str({k: v for k, v in cascade.describe().items() if k.startswith(("esc", "records", "backend"))}))
 
         # 6 -- daemon down ---------------------------------------------------
         dead = KiviConfig().apply_overrides(extractor="llm", nli="off", retrieval="lexical",

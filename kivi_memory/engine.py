@@ -1,29 +1,38 @@
-"""The memory controller.
+"""The engine: one object that wires the pieces together and holds the API.
 
-This is the deterministic part of the system and it is deliberately the part
-that did NOT change when the sensors became model-backed. Extraction, NLI and
-embeddings are pluggable; admission, conflict resolution, reinforcement,
-decay and abstention are arithmetic defined here and in `config.KiviConfig`.
+Everything the interface, the CLI and the evaluator call goes through
+`KiviMemoryEngine`. It owns the database handle, resolves each pluggable
+backend once at construction, and coordinates the two paths:
+
+    write   ingest_record / dictate
+              -> extractor (sensor)   proposes Candidates
+              -> controller.py        decides ADD / UPDATE / REINFORCE / REJECT
+
+    read    ask
+              -> intent.py            routes the question
+              -> retrieval.py         scores and selects memories
+              -> answerer.py          composes, with citations enforced here
+
+The deliberate split is that no model touches the middle column. Sensors and
+answer composition are pluggable; admission, conflict resolution,
+reinforcement, decay and abstention are arithmetic, defined in `controller.py`,
+`retrieval.py` and `config.KiviConfig`.
 """
 
 from __future__ import annotations
 
 import json
-import math
 import re
 import time
-from dataclasses import asdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from .answerer import get_answerer
 from .config import KiviConfig
+from .controller import MemoryController
 from .core import (
     Candidate,
-    is_exclusive,
-    clamp,
     cosine,
-    effective_confidence,
     normalize_text,
     parse_dt,
     snippet,
@@ -34,10 +43,11 @@ from .core import (
 )
 from .db import connect, migrate
 from .embeddings import get_embedder
-from .extractors import RuleExtractor, SemanticExtractor, get_extractor
+from .extractors import get_extractor
 from .intent import get_router
-from .llm import OllamaClient, get_client
-from .nli import NLIResult, get_nli
+from .llm import get_client
+from .nli import get_nli
+from .retrieval import describe_weights, score_memories
 
 
 # Last-resort safety net only. Routing is done by `intent.get_router`; these
@@ -75,6 +85,9 @@ class KiviMemoryEngine:
         self.embedder = get_embedder(self.config, self.client)
         self.answerer = get_answerer(self.config, self.client)
         self.router = get_router(self.config, self.client, self.embedder)
+        self.controller = MemoryController(
+            self.config, self.nli, self.embedder,
+            self._embedding_for_memory, self._store_embedding)
         with connect(db_path) as conn:
             migrate(conn)
 
@@ -444,314 +457,18 @@ class KiviMemoryEngine:
         )
         self._store_embedding(conn, "transcript", record["id"], record["formatted_text"])
 
+    # -- controller delegates -----------------------------------------------
+    #
+    # The decision ladder lives in `controller.MemoryController`. These two
+    # names are kept on the engine because they are the write path's public
+    # surface: the ingest loop, the correction handler and the tests all reach
+    # for them.
+
     def _apply_candidate(self, conn, record: dict[str, Any], candidate: Candidate) -> dict[str, Any]:
-        existing = conn.execute(
-            """
-            SELECT * FROM memories
-            WHERE memory_type=? AND subject=? AND predicate=? AND scope=? AND object=?
-              AND status IN ('active', 'tentative')
-            ORDER BY updated_at DESC LIMIT 1
-            """,
-            (candidate.memory_type, candidate.subject, candidate.predicate, candidate.scope, candidate.object),
-        ).fetchone()
-        if existing:
-            return self._update_memory(conn, record, candidate, existing)
+        return self.controller.apply(conn, record, candidate)
 
-        # A paraphrase of something already known is a reinforcement, not a
-        # second memory. Exact-key matching cannot see this ("bangalore" vs
-        # "bangalore, india"); bidirectional entailment can.
-        twin, twin_nli = self._find_equivalent(conn, candidate)
-        if twin is not None:
-            return self._update_memory(conn, record, candidate, twin, nli=twin_nli)
-
-        conflict, conflict_nli = self._find_conflict(conn, candidate)
-        if (
-            conflict is not None
-            and candidate.status == "active"
-            and candidate.confidence >= self.config.supersede_confidence
-        ):
-            conn.execute(
-                "UPDATE memories SET status='archived', updated_at=? WHERE id=?",
-                (utc_now(), conflict["id"]),
-            )
-            self._insert_memory(conn, record, candidate, supersedes_id=conflict["id"])
-            basis = (
-                f"NLI {conflict_nli.label} p={conflict_nli.probability:.2f} via {conflict_nli.backend}"
-                if conflict_nli else "exclusive-predicate rule"
-            )
-            return self._record_decision(
-                conn,
-                record["id"],
-                "UPDATE",
-                candidate.id,
-                asdict(candidate),
-                f"Superseded conflicting memory {conflict['id']} ({basis}); new evidence was stronger.",
-                candidate.confidence,
-                candidate.utility,
-                nli=conflict_nli,
-                source=candidate.source,
-            )
-
-        if candidate.utility >= self.config.admit_utility and candidate.confidence >= self.config.admit_confidence:
-            self._insert_memory(conn, record, candidate)
-            action = "ADD_TENTATIVE" if candidate.status == "tentative" else "ADD"
-            return self._record_decision(
-                conn,
-                record["id"],
-                action,
-                candidate.id,
-                asdict(candidate),
-                candidate.reason,
-                candidate.confidence,
-                candidate.utility,
-                source=candidate.source,
-            )
-
-        return self._record_decision(
-            conn,
-            record["id"],
-            "REJECT",
-            None,
-            asdict(candidate),
-            (
-                f"Candidate had insufficient confidence/utility for durable memory "
-                f"(utility {candidate.utility:.2f} < {self.config.admit_utility}, "
-                f"confidence {candidate.confidence:.2f} < {self.config.admit_confidence})."
-            ),
-            candidate.confidence,
-            candidate.utility,
-            source=candidate.source,
-        )
-
-    # -- conflict / equivalence detection -----------------------------------
-
-    def _neighbourhood(self, conn, candidate: Candidate, limit: int = 6) -> list[Any]:
-        """Stored memories that plausibly talk about the same thing.
-
-        Restricted to the same subject and scope, then ranked by embedding
-        similarity, so NLI is asked at most `limit` questions per candidate
-        instead of once per stored memory.
-        """
-        rows = conn.execute(
-            """
-            SELECT * FROM memories
-            WHERE subject=? AND scope=? AND status IN ('active', 'tentative') AND id<>?
-            """,
-            (candidate.subject, candidate.scope, candidate.id),
-        ).fetchall()
-        if not rows:
-            return []
-        query_vector = self.embedder.embed_one(candidate.embedding_text())
-        scored = []
-        for row in rows:
-            similarity = cosine(query_vector, self._embedding_for_memory(conn, row))
-            same_predicate = row["predicate"] == candidate.predicate
-            if similarity >= self.config.semantic_conflict_similarity or same_predicate:
-                scored.append((similarity + (0.25 if same_predicate else 0.0), row))
-        scored.sort(key=lambda item: item[0], reverse=True)
-        return [row for _, row in scored[:limit]]
-
-    def _find_equivalent(self, conn, candidate: Candidate) -> tuple[Any | None, NLIResult | None]:
-        if self.nli.name == "off":
-            return None, None
-        for row in self._neighbourhood(conn, candidate):
-            if row["object"] == candidate.object and row["predicate"] == candidate.predicate:
-                continue  # exact-key path already handled this
-            same, result = self.nli.equivalent(
-                row["canonical_text"], candidate.canonical_text, self.config.nli_equivalence_threshold
-            )
-            if same:
-                return row, result
-        return None, None
-
-    def _find_conflict(self, conn, candidate: Candidate) -> tuple[Any | None, NLIResult | None]:
-        """Conflict detection: NLI first, exclusive-predicate whitelist as backstop.
-
-        The whitelist is kept because it is cheap, exact, and correct for the
-        predicates it covers. NLI extends the same decision to everything else,
-        including predicates nobody enumerated in advance.
-        """
-        if self.nli.name != "off" and candidate.memory_type in self.config.nli_conflict_types:
-            for row in self._neighbourhood(conn, candidate):
-                if row["memory_type"] not in self.config.nli_conflict_types:
-                    continue
-                if row["object"] == candidate.object and row["predicate"] == candidate.predicate:
-                    continue
-                contradicts, result = self.nli.contradicts(
-                    row["canonical_text"], candidate.canonical_text, self.config.nli_contradiction_threshold
-                )
-                if contradicts:
-                    return row, result
-
-        if not is_exclusive(candidate.predicate):
-            return None, None
-        row = conn.execute(
-            """
-            SELECT * FROM memories
-            WHERE memory_type=? AND subject=? AND predicate=? AND scope=?
-              AND object<>? AND status IN ('active', 'tentative')
-            ORDER BY confidence DESC, updated_at DESC LIMIT 1
-            """,
-            (candidate.memory_type, candidate.subject, candidate.predicate, candidate.scope, candidate.object),
-        ).fetchone()
-        return row, None
-
-    def _insert_memory(self, conn, record: dict[str, Any], candidate: Candidate, supersedes_id: str | None = None) -> None:
-        now = utc_now()
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO memories(
-                id, memory_type, subject, predicate, object, scope, canonical_text,
-                status, confidence, utility, importance, recurrence, decay_rate,
-                first_seen_at, last_seen_at, updated_at, supersedes_id, metadata_json
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                candidate.id,
-                candidate.memory_type,
-                candidate.subject,
-                candidate.predicate,
-                candidate.object,
-                candidate.scope,
-                candidate.canonical_text,
-                candidate.status,
-                candidate.confidence,
-                candidate.utility,
-                candidate.importance,
-                1,
-                candidate.decay_rate,
-                record["created_at"],
-                record["created_at"],
-                now,
-                supersedes_id,
-                json.dumps(candidate.metadata, sort_keys=True),
-            ),
-        )
-        conn.execute("UPDATE memories SET source=? WHERE id=?", (candidate.source, candidate.id))
-        self._store_embedding(conn, "memory", candidate.id, candidate.embedding_text())
-        self._insert_evidence(conn, candidate.id, record, "supports", candidate.evidence, candidate.confidence)
-
-    def _update_memory(
-        self,
-        conn,
-        record: dict[str, Any],
-        candidate: Candidate,
-        existing,
-        nli: NLIResult | None = None,
-    ) -> dict[str, Any]:
-        recurrence = int(existing["recurrence"]) + 1
-        confidence = clamp(1 - (1 - float(existing["confidence"])) * (1 - candidate.confidence * 0.45))
-        utility = clamp(max(float(existing["utility"]), candidate.utility) + min(0.08, recurrence * 0.006))
-        status = "active" if confidence >= self.config.tentative_confidence else existing["status"]
-        conn.execute(
-            """
-            UPDATE memories
-            SET confidence=?, utility=?, importance=max(importance, ?), recurrence=?,
-                last_seen_at=?, updated_at=?, status=?
-            WHERE id=?
-            """,
-            (
-                round(confidence, 3),
-                round(utility, 3),
-                candidate.importance,
-                recurrence,
-                record["created_at"],
-                utc_now(),
-                status,
-                existing["id"],
-            ),
-        )
-        self._insert_evidence(conn, existing["id"], record, "supports", candidate.evidence, candidate.confidence)
-        if nli is not None:
-            note = (
-                f"Merged a paraphrase of an existing memory (NLI {nli.label} "
-                f"p={nli.probability:.2f} via {nli.backend}); recurrence #{recurrence}."
-            )
-        else:
-            note = f"Matched existing memory and raised confidence through recurrence #{recurrence}."
-        return self._record_decision(
-            conn,
-            record["id"],
-            "REINFORCE",
-            existing["id"],
-            asdict(candidate),
-            note,
-            confidence,
-            utility,
-            nli=nli,
-            source=candidate.source,
-        )
-
-    def _insert_evidence(
-        self,
-        conn,
-        memory_id: str,
-        record: dict[str, Any],
-        relation: str,
-        evidence_snippet: str,
-        contribution: float,
-    ) -> None:
-        evidence_id = stable_id("ev", memory_id, record["id"], relation, evidence_snippet)
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO memory_evidence(
-                id, memory_id, transcript_id, relation, snippet, contribution, observed_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (evidence_id, memory_id, record["id"], relation, evidence_snippet, contribution, record["created_at"]),
-        )
-
-    def _record_decision(
-        self,
-        conn,
-        transcript_id: str | None,
-        action: str,
-        target_memory_id: str | None,
-        candidate: dict[str, Any],
-        reason: str,
-        confidence: float,
-        utility: float,
-        nli: NLIResult | None = None,
-        source: str = "rule",
-    ) -> dict[str, Any]:
-        decision_id = stable_id("dec", transcript_id, action, target_memory_id, json.dumps(candidate, sort_keys=True))
-        row = {
-            "id": decision_id,
-            "transcript_id": transcript_id,
-            "action": action,
-            "target_memory_id": target_memory_id,
-            "candidate": candidate,
-            "reason": reason,
-            "confidence": round(float(confidence), 3),
-            "utility": round(float(utility), 3),
-            "extractor": source,
-            "nli": nli.as_dict() if nli else None,
-        }
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO decisions(
-                id, transcript_id, action, target_memory_id, candidate_json, reason,
-                confidence, utility, extractor, nli_label, nli_probability
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                row["id"],
-                row["transcript_id"],
-                row["action"],
-                row["target_memory_id"],
-                json.dumps(candidate, sort_keys=True),
-                row["reason"],
-                row["confidence"],
-                row["utility"],
-                source,
-                nli.label if nli else None,
-                round(float(nli.probability), 3) if nli else None,
-            ),
-        )
-        return row
+    def _record_decision(self, conn, *args, **kwargs) -> dict[str, Any]:
+        return self.controller.record_decision(conn, *args, **kwargs)
 
     def ask(self, query: str) -> dict[str, Any]:
         started = time.perf_counter()
@@ -906,51 +623,13 @@ class KiviMemoryEngine:
         }
 
     def _answer_from_memories(self, conn, query: str) -> dict[str, Any]:
-        rows = conn.execute(
-            "SELECT * FROM memories WHERE status IN ('active', 'tentative')"
-        ).fetchall()
-        q_tokens = tokens(query)
-        cfg = self.config
-        semantic = bool(self.embedder.describe().get("semantic"))
-        query_vector = self.embedder.embed_one(query) if semantic else None
-        now = datetime.utcnow()
+        scored = score_memories(
+            conn, query, self.config, self.embedder, self._embedding_for_memory)
+        selected = [item.row for item in scored][:4]
 
-        scored = []
-        for row in rows:
-            text = " ".join([
-                row["canonical_text"],
-                row["memory_type"],
-                row["predicate"],
-                row["object"],
-                row["scope"],
-            ])
-            overlap = len(q_tokens & tokens(text))
-
-            # decay_rate was dead weight in the first version: stored on every
-            # memory and never read. Retrieval now scores on time-decayed
-            # confidence, damped by how often the memory has recurred.
-            conf_eff = effective_confidence(
-                row["confidence"], row["decay_rate"], row["recurrence"], row["last_seen_at"], now
-            )
-
-            similarity = 0.0
-            if query_vector is not None:
-                similarity = max(0.0, cosine(query_vector, self._embedding_for_memory(conn, row)))
-
-            score = (
-                overlap * cfg.w_lexical
-                + similarity * cfg.w_semantic
-                + conf_eff * cfg.w_confidence
-                + row["utility"] * cfg.w_utility
-            )
-            if row["status"] == "tentative":
-                score -= cfg.tentative_penalty
-            if score > cfg.retrieval_floor:
-                scored.append((score, similarity, conf_eff, row))
-
-        scored.sort(key=lambda item: item[0], reverse=True)
-        selected = [item[3] for item in scored][:4]
-        if not selected or scored[0][0] < cfg.answer_threshold:
+        # The abstention gate. Nothing below this point can invent an answer,
+        # because nothing below this point runs unless a real memory cleared it.
+        if not selected or scored[0].score < self.config.answer_threshold:
             return self._abstain(
                 "I do not have enough supported memory to answer that.",
                 "No active memory crossed the answer threshold.",
@@ -968,8 +647,7 @@ class KiviMemoryEngine:
         if cited:
             memories = [item for item in memories if item["id"] in cited] or memories
 
-        detail = {item[3]["id"]: {"score": round(item[0], 3), "similarity": round(item[1], 3),
-                                  "decayed_confidence": round(item[2], 3)} for item in scored}
+        detail = {item.row["id"]: item.as_detail() for item in scored}
         for item in memories:
             item["retrieval"] = detail.get(item["id"], {})
 
@@ -979,9 +657,7 @@ class KiviMemoryEngine:
             "used_memories": memories,
             "source_transcripts": self._sources_for_memories(conn, [item["id"] for item in memories]),
             "reason": (
-                f"Hybrid retrieval: {cfg.w_lexical}*lexical + {cfg.w_semantic}*cosine("
-                f"{self.embedder.describe().get('backend')}) + {cfg.w_confidence}*decayed_confidence + "
-                f"{cfg.w_utility}*utility, tentative penalty {cfg.tentative_penalty}. "
+                f"{describe_weights(self.config, self.embedder)} "
                 f"Answer composed by {composed.get('backend')} from the cited memories only."
             ),
         }

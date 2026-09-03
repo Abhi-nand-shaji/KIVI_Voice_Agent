@@ -34,7 +34,8 @@ CLAUSE_BREAK = re.compile(
 )
 
 TRAILING_NOISE = re.compile(
-    r"\s+(?:for now|right now|these days|at the moment|today|currently|please|thanks)\b\.?$",
+    r"\s+(?:for now|right now|now|these days|at the moment|today|currently|"
+    r"anymore|any more|going forward|from now on|please|thanks)\b\.?$",
     re.IGNORECASE,
 )
 
@@ -44,7 +45,8 @@ WEAK_HEADS = {
     "work", "lot", "bit", "kind", "sort", "way", "time", "times",
 }
 
-HEDGE_MARKERS = ("maybe", "might", "thinking about", "considering", "probably", "perhaps", "not sure")
+HEDGE_MARKERS = ("maybe", "might", "thinking about", "considering", "probably", "perhaps",
+                 "not sure", "i think", "i guess", "i suppose", "leaning towards", "leaning toward")
 CORRECTION_MARKERS = (
     "actually", "no longer", "instead", "switched", "now my", "now using",
     "moved off", "we moved", "changed to", "from now on", "correction",
@@ -75,8 +77,16 @@ def slug(value: str, max_words: int = 4) -> str:
     return "_".join(words[:max_words]) or "general"
 
 
+# A prepositional phrase modifies the head noun, it is not the head noun.
+# "feedback on drafts" is about feedback; "notes for the review" is about notes.
+PREPOSITIONAL_TAIL = re.compile(
+    r"\s+(?:on|about|for|with|regarding|around|during|in|at|from|to)\s+.*$",
+    re.IGNORECASE,
+)
+
+
 def head_noun(value: str) -> str:
-    """Last content word of a phrase, singularised - the topic key for a predicate.
+    """Head noun of a phrase, singularised - the topic key for a predicate.
 
     Stemming matters here more than it looks. The head noun becomes part of the
     predicate name, and the predicate name is the memory's identity. Without it,
@@ -87,7 +97,11 @@ def head_noun(value: str) -> str:
     """
     from .core import stem  # noqa: PLC0415  (core does not import frames)
 
-    words = [w for w in re.findall(r"[a-z0-9]+", value.lower()) if len(w) > 2]
+    # Strip a trailing prepositional phrase first, so "detailed written
+    # feedback on drafts" keys on `feedback`, not `draft` - otherwise one
+    # preference stated two ways becomes two memories that never reconcile.
+    trimmed = PREPOSITIONAL_TAIL.sub("", value).strip() or value
+    words = [w for w in re.findall(r"[a-z0-9]+", trimmed.lower()) if len(w) > 2]
     for word in reversed(words):
         if word not in WEAK_HEADS:
             return stem(word)

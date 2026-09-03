@@ -29,6 +29,8 @@ from .core import (
     normalize_text,
     parse_dt,
     snippet,
+    strip_disfluency,
+    tokens,
     utility_score,
 )
 from .frames import (
@@ -40,6 +42,19 @@ from .frames import (
     head_noun,
 )
 from .llm import OllamaClient
+
+
+# Why a transcript produced no candidates. The first two are *positive*
+# determinations - the frames concluded there is nothing here to remember - and
+# the third is an admission of failure. The cascade needs the difference: it
+# must not spend a model call re-litigating a decision the frames already made
+# correctly, and must never let a model override an explicit "don't remember
+# this".
+IGNORED_SUPPRESSED = "The user explicitly asked for this not to be remembered."
+IGNORED_EPHEMERAL = "Ephemeral personal remark with no durable claim in it."
+IGNORED_NO_CLAIM = "No first-person claim, preference, commitment, or event was stated."
+
+SETTLED_REASONS = (IGNORED_SUPPRESSED, IGNORED_EPHEMERAL)
 
 
 class RuleExtractor:
@@ -58,10 +73,11 @@ class RuleExtractor:
     SENTENCE = re.compile(r"(?<=[.!?])\s+")
 
     def extract(self, record: dict[str, Any]) -> tuple[list[Candidate], list[str]]:
-        text = normalize_text(record.get("formatted_text") or record.get("raw_asr") or "")
+        text = strip_disfluency(normalize_text(
+            record.get("formatted_text") or record.get("raw_asr") or ""))
         lower = text.lower()
         if self._explicitly_low_value(lower):
-            return [], ["The user explicitly asked for this not to be remembered."]
+            return [], [IGNORED_SUPPRESSED]
 
         candidates: dict[str, Candidate] = {}
         for sentence in self._sentences(text):
@@ -85,9 +101,9 @@ class RuleExtractor:
         ignored: list[str] = []
         if not candidates:
             if self._looks_ephemeral(lower):
-                ignored.append("Ephemeral personal remark with no durable claim in it.")
+                ignored.append(IGNORED_EPHEMERAL)
             else:
-                ignored.append("No first-person claim, preference, commitment, or event was stated.")
+                ignored.append(IGNORED_NO_CLAIM)
         return list(candidates.values()), ignored
 
     def _sentences(self, text: str) -> list[str]:
@@ -216,14 +232,27 @@ class RuleExtractor:
         )
         return bool(past_tense) and not forward_looking and not scheduled
 
+    # A retraction is grammar, not vocabulary. The literal-phrase list this
+    # replaces missed "do not remember any of this" while catching "do not
+    # remember this", which is the kind of gap a person finds immediately and a
+    # test corpus never does. A negated retention verb with any of its ordinary
+    # objects is the whole pattern.
+    SUPPRESSION = re.compile(
+        r"\b(?:do ?n[o']?t|dont|no need to|never)\s+"
+        r"(?:remember|save|store|keep|note|record|log)\b"
+        r"(?:\s+(?:any\s+)?(?:of\s+)?(?:this|that|these|it|any\s+of\s+it))?",
+        re.IGNORECASE,
+    )
+
     def _explicitly_low_value(self, lower: str) -> bool:
         """An explicit instruction from the user, not a guess about the topic."""
+        if self.SUPPRESSION.search(lower):
+            return True
         return any(
             phrase in lower
             for phrase in (
                 "nothing important", "remember nothing", "nothing from this",
-                "do not remember this", "don't remember this", "no need to remember",
-                "random note", "ignore this", "forget this",
+                "random note", "ignore this", "forget this", "off the record",
             )
         )
 
@@ -449,13 +478,33 @@ class LlmExtractor:
         )
 
 
-class HybridExtractor:
-    """Union of both sensors, deduplicated on candidate identity.
+def _merge(
+    rule_candidates: list[Candidate],
+    rule_ignored: list[str],
+    llm_candidates: list[Candidate],
+    llm_ignored: list[str],
+) -> tuple[list[Candidate], list[str]]:
+    """Union two sensors' output, deduplicated on candidate identity.
 
-    Rules win ties: where both fire on the same (type, predicate, scope,
-    object), the deterministic candidate is kept so the reproducible path
+    Frames win ties: where both fire on the same (type, predicate, scope,
+    object), the deterministic candidate is kept, so the reproducible path
     stays authoritative and the model only adds recall.
     """
+    merged: dict[str, Candidate] = {c.id: c for c in llm_candidates}
+    merged.update({c.id: c for c in rule_candidates})
+    ignored = rule_ignored + [item for item in llm_ignored if item not in rule_ignored]
+    if merged:
+        # "nothing here" notes from either sensor are wrong once the other found
+        # something; drop them rather than showing a contradictory audit line.
+        ignored = [
+            item for item in ignored
+            if "No durable" not in item and item != IGNORED_NO_CLAIM
+        ]
+    return list(merged.values()), ignored
+
+
+class HybridExtractor:
+    """Both sensors on every record, unioned. One model call per transcript."""
 
     def __init__(self, rule: RuleExtractor, llm: LlmExtractor) -> None:
         self.rule = rule
@@ -465,18 +514,110 @@ class HybridExtractor:
         return {"backend": "hybrid(rule+llm)", **self.llm.describe()}
 
     def extract(self, record: dict[str, Any]) -> tuple[list[Candidate], list[str]]:
+        return _merge(*self.rule.extract(record), *self.llm.extract(record))
+
+
+class CascadeExtractor:
+    """Frames first; the model only where the frames demonstrably fell short.
+
+    `HybridExtractor` pays for a model call on every transcript, including the
+    large majority that a frame parses cleanly. That is the dominant cost in
+    ingestion and almost all of it buys nothing.
+
+    This escalates instead, on three signals - and the *controller* owns the
+    thresholds, exactly as it owns the admission thresholds:
+
+      1. no frame matched at all;
+      2. the best matching frame was not confident (hedged speech, a vague
+         frame like `event_with`) - `escalate_below`;
+      3. the frames matched, but their candidates account for less than
+         `escalate_coverage` of the transcript's content words, i.e. most of
+         what was said went unparsed.
+
+    (3) is the one a naive confidence gate misses. "My manager is Neha and I
+    prefer detailed written feedback" can match `possessive` at confidence 0.84
+    while the entire second clause is dropped on the floor. High confidence,
+    half the sentence lost.
+
+    `escalation_rate` is recorded so the cost/recall trade-off is measurable
+    rather than asserted: sweeping `escalate_below` from 0 to 1 traces a curve
+    from zero model calls to one per record.
+    """
+
+    def __init__(self, rule: RuleExtractor, llm: LlmExtractor, config: KiviConfig) -> None:
+        self.rule = rule
+        self.llm = llm
+        self.config = config
+        self.seen = 0
+        self.escalated = 0
+
+    def describe(self) -> dict[str, Any]:
+        described = dict(self.llm.describe())
+        described.pop("backend", None)   # the cascade's backend, not the model's
+        return {
+            "backend": "cascade(rule->llm)",
+            "model": self.llm.describe().get("backend"),
+            "escalate_below": self.config.escalate_below,
+            "escalate_coverage": self.config.escalate_coverage,
+            "records_seen": self.seen,
+            "records_escalated": self.escalated,
+            "escalation_rate": round(self.escalated / self.seen, 3) if self.seen else 0.0,
+            **described,
+        }
+
+    @staticmethod
+    def coverage(text: str, candidates: list[Candidate]) -> float:
+        """Fraction of the transcript's content words the candidates account for.
+
+        Compared on stemmed content tokens rather than character spans, because
+        a candidate's `evidence` is a snippet that may be truncated, and its
+        predicate carries words the object does not ("prefers_feedback" covers
+        both "prefer" and "feedback").
+        """
+        text_tokens = tokens(text)
+        if not text_tokens:
+            return 1.0
+        covered: set[str] = set()
+        for candidate in candidates:
+            covered |= tokens(candidate.object) | tokens(candidate.predicate)
+        return len(text_tokens & covered) / len(text_tokens)
+
+    def _escalation_reason(
+        self, text: str, candidates: list[Candidate], ignored: list[str] | None = None
+    ) -> str | None:
+        # A settled reason is the frames saying "there is nothing here", not
+        # "I could not parse this". Escalating on those is wrong twice over: it
+        # spends a model call to learn nothing, and on IGNORED_SUPPRESSED it
+        # would let the model extract from a transcript the person explicitly
+        # asked not to be remembered. Measured on the 500-record corpus, these
+        # account for 136 of the 324 no-candidate records.
+        if any(reason in SETTLED_REASONS for reason in (ignored or [])):
+            return None
+        if not candidates:
+            return "no frame matched"
+        best = max(c.confidence for c in candidates)
+        if best < self.config.escalate_below:
+            return f"best frame confidence {best:.2f} < {self.config.escalate_below}"
+        covered = self.coverage(text, candidates)
+        if covered < self.config.escalate_coverage:
+            return f"frames covered {covered:.0%} of the transcript < {self.config.escalate_coverage:.0%}"
+        return None
+
+    def extract(self, record: dict[str, Any]) -> tuple[list[Candidate], list[str]]:
+        text = strip_disfluency(normalize_text(
+            record.get("formatted_text") or record.get("raw_asr") or ""))
         rule_candidates, rule_ignored = self.rule.extract(record)
+
+        self.seen += 1
+        reason = self._escalation_reason(text, rule_candidates, rule_ignored)
+        if reason is None:
+            return rule_candidates, rule_ignored
+
+        self.escalated += 1
         llm_candidates, llm_ignored = self.llm.extract(record)
-        merged: dict[str, Candidate] = {c.id: c for c in llm_candidates}
-        merged.update({c.id: c for c in rule_candidates})
-        ignored = rule_ignored + [item for item in llm_ignored if item not in rule_ignored]
-        if merged:
-            ignored = [item for item in ignored if "No durable" not in item]
-        return list(merged.values()), ignored
-
-
-# Backwards-compatible alias: the original class name.
-SemanticExtractor = RuleExtractor
+        for candidate in llm_candidates:
+            candidate.metadata["escalated_because"] = reason
+        return _merge(rule_candidates, rule_ignored, llm_candidates, llm_ignored)
 
 
 def get_extractor(config: KiviConfig, client: OllamaClient | None):
@@ -487,6 +628,8 @@ def get_extractor(config: KiviConfig, client: OllamaClient | None):
         return LlmExtractor(client, config)
     if mode == "hybrid":
         return HybridExtractor(RuleExtractor(), LlmExtractor(client, config))
+    if mode == "cascade":
+        return CascadeExtractor(RuleExtractor(), LlmExtractor(client, config), config)
     # auto
     if client.available() and client.has_model(config.llm_model):
         return LlmExtractor(client, config)

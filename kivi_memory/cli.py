@@ -28,6 +28,13 @@ def add_backend_flags(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--llm-model", dest="llm_model", default=None)
     group.add_argument("--embed-model", dest="embed_model", default=None)
     group.add_argument("--nli-model", dest="nli_model", default=None)
+    group.add_argument("--escalate-below", dest="escalate_below", type=float, default=None,
+                       help="extractor=cascade: consult the model when the best frame's "
+                            "confidence is below this (default 0.70).")
+    group.add_argument("--escalate-coverage", dest="escalate_coverage", type=float, default=None,
+                       help="extractor=cascade: consult the model when the frames account for "
+                            "less than this fraction of the transcript's content words "
+                            "(default 0.50).")
     group.add_argument("--no-cache", dest="use_cache", action="store_false", default=None,
                        help="Bypass the local response cache (slower, still offline).")
     group.add_argument("--deterministic", action="store_true",
@@ -47,6 +54,8 @@ def build_config(args: argparse.Namespace) -> KiviConfig:
         llm_model=getattr(args, "llm_model", None),
         embed_model=getattr(args, "embed_model", None),
         nli_model=getattr(args, "nli_model", None),
+        escalate_below=getattr(args, "escalate_below", None),
+        escalate_coverage=getattr(args, "escalate_coverage", None),
         use_cache=getattr(args, "use_cache", None),
     )
     return config

@@ -186,9 +186,6 @@ def is_exclusive(predicate: str) -> bool:
     return name.endswith("_is") or name.startswith("prefers_")
 
 
-# Kept for backwards compatibility with anything importing the old name.
-EXCLUSIVE_PREDICATES = EXCLUSIVE_PREDICATE_NAMES
-
 
 def utc_now() -> str:
     return datetime.utcnow().replace(microsecond=0).isoformat()
@@ -205,6 +202,28 @@ def stable_id(prefix: str, *parts: object) -> str:
 
 def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip())
+
+
+DISFLUENCY = re.compile(
+    r"\b(um+|uh+|erm+|hmm+|you know|i mean|sort of|kind of|like i said|basically)\b",
+    re.IGNORECASE,
+)
+
+
+def strip_disfluency(text: str) -> str:
+    """Remove spoken filler.
+
+    Extraction runs on whatever text it is given. When that text is raw ASR
+    rather than a cleaned transcript, filler ends up *inside* the extracted
+    value - "I prefer detailed written feedback you know" became
+    `prefers_know = "detailed written feedback you know"`, because the head
+    noun of the phrase was "know". Stripping filler first is language-level,
+    not domain-level, and it keeps the same code correct on raw and formatted
+    input alike.
+    """
+    cleaned = DISFLUENCY.sub("", text)
+    cleaned = re.sub(r"\s+([,.;:!?])", r"\1", cleaned)
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 def expand_identifier(value: str) -> list[str]:

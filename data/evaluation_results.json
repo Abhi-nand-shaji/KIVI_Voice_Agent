@@ -59,7 +59,7 @@
             "app": null
           }
         },
-        "latency_ms": 5.34,
+        "latency_ms": 3.9,
         "query": "What response style do I prefer?",
         "reason": "Hybrid retrieval: 0.55*lexical + 1.6*cosine(hash-bow) + 0.35*decayed_confidence + 0.45*utility, tentative penalty 0.25. Answer composed by template from the cited memories only.",
         "source_transcripts": [
@@ -68,7 +68,7 @@
             "created_at": "2026-09-01T18:20:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0496",
-            "ingested_at": "2026-09-01 14:47:39",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -77,7 +77,7 @@
             "created_at": "2026-09-01T17:08:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0491",
-            "ingested_at": "2026-09-01 14:47:39",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -86,7 +86,7 @@
             "created_at": "2026-09-01T13:24:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0484",
-            "ingested_at": "2026-09-01 14:47:39",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -95,7 +95,7 @@
             "created_at": "2026-09-01T12:52:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0482",
-            "ingested_at": "2026-09-01 14:47:39",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -104,7 +104,7 @@
             "created_at": "2026-08-31T18:24:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0464",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -113,7 +113,7 @@
             "created_at": "2026-08-31T13:03:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0454",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -122,7 +122,7 @@
             "created_at": "2026-08-31T10:05:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0449",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -131,7 +131,7 @@
             "created_at": "2026-08-30T18:38:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0438",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -140,7 +140,7 @@
             "created_at": "2026-08-29T11:05:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0381",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -149,7 +149,7 @@
             "created_at": "2026-08-29T10:19:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0376",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -158,7 +158,7 @@
             "created_at": "2026-08-28T19:06:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0368",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           },
@@ -167,7 +167,7 @@
             "created_at": "2026-08-28T18:46:00",
             "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
             "id": "seed_0366",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:35",
             "metadata_json": "{\"kind\": \"work\", \"synthetic\": true}",
             "raw_asr": "for the predictive maintenance notes keep the explanation con size and grounded in evidence"
           }
@@ -180,7 +180,7 @@
               {
                 "app": "notion",
                 "contribution": 0.82,
-                "created_at": "2026-09-01 14:47:39",
+                "created_at": "2026-09-02 12:55:35",
                 "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
                 "id": "ev_1d20cdce78d6a68f",
                 "memory_id": "mem_0407fcc755e82869",
@@ -192,7 +192,7 @@
               {
                 "app": "linear",
                 "contribution": 0.82,
-                "created_at": "2026-09-01 14:47:39",
+                "created_at": "2026-09-02 12:55:35",
                 "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
                 "id": "ev_f91da01d7cbea590",
                 "memory_id": "mem_0407fcc755e82869",
@@ -204,7 +204,7 @@
               {
                 "app": "calendar",
                 "contribution": 0.82,
-                "created_at": "2026-09-01 14:47:39",
+                "created_at": "2026-09-02 12:55:35",
                 "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
                 "id": "ev_2218bafdcf714a47",
                 "memory_id": "mem_0407fcc755e82869",
@@ -216,7 +216,7 @@
               {
                 "app": "docs",
                 "contribution": 0.82,
-                "created_at": "2026-09-01 14:47:39",
+                "created_at": "2026-09-02 12:55:35",
                 "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
                 "id": "ev_2c7ad45f9a3023cf",
                 "memory_id": "mem_0407fcc755e82869",
@@ -228,7 +228,7 @@
               {
                 "app": "dictation",
                 "contribution": 0.82,
-                "created_at": "2026-09-01 14:47:38",
+                "created_at": "2026-09-02 12:55:35",
                 "formatted_text": "For the predictive maintenance notes, keep the explanation concise and grounded in evidence.",
                 "id": "ev_12073df14c04cd67",
                 "memory_id": "mem_0407fcc755e82869",
@@ -246,8 +246,8 @@
             "predicate": "prefers_explanation",
             "recurrence": 37,
             "retrieval": {
-              "decayed_confidence": 0.999,
-              "score": 1.35,
+              "decayed_confidence": 0.997,
+              "score": 1.349,
               "similarity": 0.0
             },
             "scope": "communication",
@@ -286,7 +286,7 @@
             "app": null
           }
         },
-        "latency_ms": 4.23,
+        "latency_ms": 2.95,
         "query": "Which language am I using for the Golden Goose prototype?",
         "reason": "Hybrid retrieval: 0.55*lexical + 1.6*cosine(hash-bow) + 0.35*decayed_confidence + 0.45*utility, tentative penalty 0.25. Answer composed by template from the cited memories only.",
         "source_transcripts": [
@@ -295,7 +295,7 @@
             "created_at": "2026-08-22T12:05:00",
             "formatted_text": "Actually I switched the Golden Goose prototype to Python so the local reviewer can run it without extra setup.",
             "id": "seed_0129",
-            "ingested_at": "2026-09-01 14:47:38",
+            "ingested_at": "2026-09-02 12:55:34",
             "metadata_json": "{\"kind\": \"anchor\", \"synthetic\": true}",
             "raw_asr": "actually i switched the golden goos prototype to pie thin so the local reviewer can run it without extra setup"
           }
@@ -308,7 +308,7 @@
               {
                 "app": "notion",
                 "contribution": 1.0,
-                "created_at": "2026-09-01 14:47:38",
+                "created_at": "2026-09-02 12:55:34",
                 "formatted_text": "Actually I switched the Golden Goose prototype to Python so the local reviewer can run it without extra setup.",
                 "id": "ev_f82bf9ca0e091ab6",
                 "memory_id": "mem_4bb661001ff2bb3f",
@@ -326,8 +326,8 @@
             "predicate": "uses_tool",
             "recurrence": 1,
             "retrieval": {
-              "decayed_confidence": 0.742,
-              "score": 2.879,
+              "decayed_confidence": 0.722,
+              "score": 2.872,
               "similarity": 0.0
             },
             "scope": "project:golden_goose_prototype",
@@ -366,7 +366,7 @@
             "app": "slack"
           }
         },
-        "latency_ms": 9.56,
+        "latency_ms": 6.85,
         "query": "Hey Kivi, find the dictation I did around 5 PM yesterday in Slack and polish it for the meeting.",
         "reason": "Hybrid retrieval used app, date, approximate time, lexical overlap, and response-style memory.",
         "source_transcripts": [
@@ -410,7 +410,7 @@
             "app": null
           }
         },
-        "latency_ms": 3.97,
+        "latency_ms": 2.51,
         "query": "What assignment am I working on?",
         "reason": "No active memory crossed the answer threshold.",
         "source_transcripts": [],
@@ -446,7 +446,7 @@
             "app": null
           }
         },
-        "latency_ms": 3.91,
+        "latency_ms": 2.37,
         "query": "What is my passport number?",
         "reason": "No active memory crossed the answer threshold.",
         "source_transcripts": [],
@@ -470,7 +470,7 @@
     {
       "answer": {
         "abstained": false,
-        "answer": "Kivi ignored these because they had low durable utility:\n- No first-person claim, preference, commitment, or event was stated. (and 115 more like it)\n    e.g. \"I am working on the Kivi memory prototype and the backend should be easy to reset.\"\n- Ephemeral personal remark with no durable claim in it. (and 27 more like it)\n    e.g. \"Had chai after lunch and the weather was humid again.\"\n- The user explicitly asked for this not to be remembered. (and 55 more like it)\n    e.g. \"Traffic was slow near the metro, nothing important for work.\"",
+        "answer": "Kivi ignored these because they had low durable utility:\n- The user explicitly asked for this not to be remembered. (and 54 more like it)\n    e.g. \"Random note: the cafe playlist was too loud today.\"\n- No first-person claim, preference, commitment, or event was stated. (and 114 more like it)\n    e.g. \"I am working on the Kivi memory prototype and the backend should be easy to reset.\"\n- Ephemeral personal remark with no durable claim in it. (and 29 more like it)\n    e.g. \"Had chai after lunch and the weather was humid again.\"",
         "intent": {
           "backend": "exemplar",
           "confidence": 1.0,
@@ -479,57 +479,57 @@
             "app": null
           }
         },
-        "latency_ms": 4.26,
+        "latency_ms": 2.96,
         "query": "What did Kivi deliberately ignore?",
         "reason": "User asked to inspect ignored candidates and controller decisions.",
         "source_transcripts": [
           {
-            "app": "dictation",
-            "created_at": "2026-09-01 14:47:39",
+            "app": "notion",
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "Random note: the cafe playlist was too loud today.",
+            "id": "seed_0144"
+          },
+          {
+            "app": "calendar",
+            "created_at": "2026-09-02 12:55:35",
             "formatted_text": "I am working on the Kivi memory prototype and the backend should be easy to reset.",
-            "id": "seed_0467"
+            "id": "seed_0145"
+          },
+          {
+            "app": "gmail",
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "The Golden Goose project focuses on selective semantic memory and Hey Kivi tool use.",
+            "id": "seed_0147"
           },
           {
             "app": "calendar",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "Working on the Golden Goose memory controller. The useful part is deciding what to ignore, not storing every transcript.",
-            "id": "seed_0468"
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "The Golden Goose project focuses on selective semantic memory and Hey Kivi tool use.",
+            "id": "seed_0148"
           },
           {
-            "app": "calendar",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "Had chai after lunch and the weather was humid again.",
-            "id": "seed_0471"
+            "app": "dictation",
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "Random note: the cafe playlist was too loud today.",
+            "id": "seed_0150"
+          },
+          {
+            "app": "docs",
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "Coffee was colder than usual and I need to remember nothing from this.",
+            "id": "seed_0151"
+          },
+          {
+            "app": "slack",
+            "created_at": "2026-09-02 12:55:35",
+            "formatted_text": "Kivi should keep provenance for any important memory so I can inspect the source later.",
+            "id": "seed_0152"
           },
           {
             "app": "notion",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "Traffic was slow near the metro, nothing important for work.",
-            "id": "seed_0472"
-          },
-          {
-            "app": "linear",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "The office chair squeaks sometimes.",
-            "id": "seed_0476"
-          },
-          {
-            "app": "calendar",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "For semantic memory, confidence should be separate from importance.",
-            "id": "seed_0477"
-          },
-          {
-            "app": "calendar",
-            "created_at": "2026-09-01 14:47:39",
+            "created_at": "2026-09-02 12:55:35",
             "formatted_text": "Random note: the cafe playlist was too loud today.",
-            "id": "seed_0479"
-          },
-          {
-            "app": "dictation",
-            "created_at": "2026-09-01 14:47:39",
-            "formatted_text": "I walked for ten minutes after dinner.",
-            "id": "seed_0481"
+            "id": "seed_0155"
           }
         ],
         "used_memories": []
@@ -616,7 +616,7 @@
       "passed": 5,
       "total": 6
     },
-    "avg_query_latency_ms": 5.21,
+    "avg_query_latency_ms": 3.59,
     "backends": {
       "answerer": {
         "backend": "template",
@@ -724,10 +724,10 @@
     "dictation_example": {
       "app": "slack",
       "applied": [],
-      "created_at": "2026-09-01T14:47:39",
+      "created_at": "2026-09-02T12:55:36",
       "formatted": "So I need to send the evaluation writeup before friday and keep the summary short when you write it up for me.",
       "ignored": [],
-      "latency_ms": 4.01,
+      "latency_ms": 5.23,
       "learned": [
         {
           "action": "ADD",
@@ -741,9 +741,9 @@
         }
       ],
       "raw": "um so I need to uh send the evaluation writeup before friday and you know keep the summary short when you write it up for me",
-      "transcript_id": "tr_0e7c863e03f81434"
+      "transcript_id": "tr_4b7dd52ad6060d57"
     },
-    "end_to_end_latency_ms": 1751.85,
+    "end_to_end_latency_ms": 1608.42,
     "growth": {
       "bytes_per_transcript": 3399.7,
       "latest": {
@@ -754,7 +754,7 @@
         "evidence_rows": 177,
         "id": 10,
         "memories": 24,
-        "sampled_at": "2026-09-01 14:47:39",
+        "sampled_at": "2026-09-02 12:55:35",
         "transcripts": 500
       },
       "memories_per_100_transcripts": 4.4,
@@ -767,7 +767,7 @@
           "evidence_rows": 19,
           "id": 1,
           "memories": 14,
-          "sampled_at": "2026-09-01 14:47:37",
+          "sampled_at": "2026-09-02 12:55:34",
           "transcripts": 50
         },
         {
@@ -778,7 +778,7 @@
           "evidence_rows": 32,
           "id": 2,
           "memories": 16,
-          "sampled_at": "2026-09-01 14:47:37",
+          "sampled_at": "2026-09-02 12:55:34",
           "transcripts": 100
         },
         {
@@ -789,7 +789,7 @@
           "evidence_rows": 53,
           "id": 3,
           "memories": 19,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 150
         },
         {
@@ -800,7 +800,7 @@
           "evidence_rows": 69,
           "id": 4,
           "memories": 20,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 200
         },
         {
@@ -811,7 +811,7 @@
           "evidence_rows": 89,
           "id": 5,
           "memories": 20,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 250
         },
         {
@@ -822,7 +822,7 @@
           "evidence_rows": 102,
           "id": 6,
           "memories": 21,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 300
         },
         {
@@ -833,7 +833,7 @@
           "evidence_rows": 121,
           "id": 7,
           "memories": 23,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 350
         },
         {
@@ -844,7 +844,7 @@
           "evidence_rows": 142,
           "id": 8,
           "memories": 23,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 400
         },
         {
@@ -855,7 +855,7 @@
           "evidence_rows": 158,
           "id": 9,
           "memories": 23,
-          "sampled_at": "2026-09-01 14:47:38",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 450
         },
         {
@@ -866,7 +866,7 @@
           "evidence_rows": 177,
           "id": 10,
           "memories": 24,
-          "sampled_at": "2026-09-01 14:47:39",
+          "sampled_at": "2026-09-02 12:55:35",
           "transcripts": 500
         }
       ],
@@ -874,7 +874,7 @@
     },
     "ingest": {
       "decisions": 501,
-      "latency_ms": 1454.13,
+      "latency_ms": 1322.87,
       "processed": 500
     },
     "model_usage": {

@@ -30,7 +30,7 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
-EXTRACTOR_MODES = ("rule", "llm", "hybrid", "auto")
+EXTRACTOR_MODES = ("rule", "llm", "hybrid", "cascade", "auto")
 NLI_MODES = ("off", "llm", "cross-encoder", "auto")
 RETRIEVAL_MODES = ("lexical", "hybrid", "auto")
 ANSWERER_MODES = ("template", "llm", "auto")
@@ -81,6 +81,14 @@ class KiviConfig:
     # decides where inference is allowed to archive something.
     nli_conflict_types: tuple = ("preference", "fact", "project_state")
 
+    # --- cascade escalation (extractor=cascade) ----------------------------
+    # When the frames parse a transcript confidently and account for most of
+    # its content words, the model is not consulted at all. These two decide
+    # "confidently" and "most". Sweeping escalate_below from 0 to 1 traces the
+    # cost/recall curve between pure frames and full hybrid.
+    escalate_below: float = 0.70
+    escalate_coverage: float = 0.50
+
     # --- retrieval weights -------------------------------------------------
     w_lexical: float = 0.55
     w_semantic: float = 1.60
@@ -108,6 +116,8 @@ class KiviConfig:
             embed_model=_env("KIVI_EMBED_MODEL", "nomic-embed-text"),
             nli_model=_env("KIVI_NLI_MODEL", ""),
             cross_encoder_model=_env("KIVI_CROSS_ENCODER_MODEL", "MoritzLaurer/DeBERTa-v3-base-mnli"),
+            escalate_below=_env_float("KIVI_ESCALATE_BELOW", 0.70),
+            escalate_coverage=_env_float("KIVI_ESCALATE_COVERAGE", 0.50),
             temperature=_env_float("KIVI_TEMPERATURE", 0.0),
             num_ctx=_env_int("KIVI_NUM_CTX", 4096),
             request_timeout=_env_float("KIVI_REQUEST_TIMEOUT", 120.0),

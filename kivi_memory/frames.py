@@ -202,6 +202,22 @@ def _valid_project(project: str) -> bool:
     return bool(project) and project.lower() not in NON_PROJECT and len(project) > 2
 
 
+# The trailing-phrase strip a tool name needs is narrower than a general noun's.
+# `head_noun` uses the full PREPOSITIONAL_TAIL because "feedback on drafts" is
+# about feedback, full stop - "on drafts" is pure modifier. A tool name is
+# different: "in" and "to" routinely introduce the tool ITSELF ("prototyping
+# in Python", "ported to Go", "a coded prototype in React"), not a modifier of
+# it. Reusing PREPOSITIONAL_TAIL here stripped exactly that: "a coded
+# prototype in React" lost "React" - the one word the object was FOR - leaving
+# "coded prototype", which then answered a "what tool" question without naming
+# a tool. "for"/"about"/"regarding"/"around"/"during" are still genuine
+# modifiers ("Python for the semantic memory work" -> "Python") and stay.
+TOOL_TRAILING_MODIFIER = re.compile(
+    r"\s+(?:for|about|regarding|around|during)\s+.*$",
+    re.IGNORECASE,
+)
+
+
 def _trim_tool(value: str) -> str:
     """A tool name is a noun phrase, and it ends where the sentence moves on.
 
@@ -214,7 +230,7 @@ def _trim_tool(value: str) -> str:
     """
     trimmed = re.split(
         r"\s+(?:with|instead of|rather than|over|and not)\s+", value, maxsplit=1)[0].strip()
-    return (PREPOSITIONAL_TAIL.sub("", trimmed).strip() or trimmed).strip()
+    return (TOOL_TRAILING_MODIFIER.sub("", trimmed).strip() or trimmed).strip()
 
 
 def _project_tool(project_group: int, tool_group: int):

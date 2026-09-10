@@ -272,6 +272,15 @@ def stem(word: str) -> str:
 def tokens(text: str) -> set[str]:
     values = set()
     for raw in re.findall(r"[a-zA-Z0-9_:.\-]+", text.lower()):
+        # A sentence-final period rides along with the last word ("task."),
+        # because the character class above deliberately keeps '.' for
+        # identifiers like "project:golden_goose" and "kivi.db". Every stored
+        # canonical_text ends in a sentence, so without this every memory's
+        # last content word produced a phantom "word." token alongside the
+        # real one - harmless to matching (queries never type the trailing
+        # period) but it inflated the token set and skewed idf() with noise
+        # tokens that exist nowhere else.
+        raw = raw.rstrip(".")
         for token in expand_identifier(raw):
             mapped = SYNONYMS.get(token, token)
             if len(mapped) > 2 and mapped not in STOPWORDS:

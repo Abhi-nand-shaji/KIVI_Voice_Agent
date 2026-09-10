@@ -41,6 +41,26 @@ IGNORED_NO_CLAIM = "No first-person claim, preference, commitment, or event was 
 
 SETTLED_REASONS = (IGNORED_SUPPRESSED,)
 
+# General near-synonyms for "a piece of work someone has been given" - not
+# corpus vocabulary (nothing here names a project or company), just the
+# handful of ordinary English words people use interchangeably for the same
+# referent. This exists because of a measured, specific gap: bag-of-words
+# retrieval has ZERO token overlap between "What assignment am I working on?"
+# and "User has a sarvam ai golden goose internship task." - not because the
+# memory doesn't answer the question, but because English has three words for
+# the thing and the `has` frame only ever renders one of them. A global
+# SYNONYMS entry was tried first and is wrong: mapping "assignment" -> "task"
+# at the tokenizer level also matches every OTHER task-type memory through its
+# scope="current_tasks" token, so the match stops being about this memory and
+# the ranking is decided by confidence/utility noise instead of relevance.
+# Restating the alias directly in this one memory's canonical text keeps the
+# match exact to the memory that actually deserves it.
+WORK_ITEM_ALIASES = {
+    "task": "an assignment or job",
+    "assignment": "a task or job",
+    "job": "a task or assignment",
+}
+
 
 class RuleExtractor:
     """Domain-free deterministic sensor.
@@ -155,7 +175,13 @@ class RuleExtractor:
         if predicate == "works_at":
             return f"User works at {readable}."
         if predicate == "based_in":
-            return f"User is based in {readable}."
+            # Only the works_out_of frame is specifically about a workplace -
+            # based_in/moved_to also cover "I live in X", where "office" would
+            # be wrong to imply. Same fix as WORK_ITEM_ALIASES, scoped by
+            # frame identity instead of by predicate, because these three
+            # frames share one predicate but not one meaning.
+            suffix = " (also called your office)" if frame.name == "works_out_of" else ""
+            return f"User is based in {readable}{suffix}."
         if predicate == "needs_to_do":
             return f"User needs to {object_}."
         if predicate == "mentioned_event":
@@ -180,7 +206,9 @@ class RuleExtractor:
         if predicate.startswith("avoids_"):
             return f"User avoids {object_}."
         if predicate.startswith("has_"):
-            return f"User has a {object_}."
+            topic = predicate[len("has_"):]
+            alias = WORK_ITEM_ALIASES.get(topic)
+            return f"User has a {object_} (also {alias})." if alias else f"User has a {object_}."
         if predicate.endswith("_is"):
             attribute = predicate[:-3].replace("_", " ")
             return f"User's {attribute} is {readable}."

@@ -85,7 +85,7 @@ All default to `auto`. Fallback is never silent — `doctor`, `inspect --kind ba
 2. the best matching frame was not confident (`--escalate-below`, default 0.70);
 3. the frames matched but account for less than `--escalate-coverage` (default 50%) of the transcript's content words.
 
-(3) is the one a plain confidence gate misses: a transcript can match one frame confidently and still leave most of what was said unparsed. On the seed corpus it is the only reason 69 of the 303 escalations happen — they would all have been skipped on confidence alone.
+(3) is the one a plain confidence gate misses: a transcript can match one frame confidently and still leave most of what was said unparsed. On the seed corpus it is the only reason 42 of the 276 escalations happen — they would all have been skipped on confidence alone.
 
 It also declines to escalate when the frames made a **positive** determination that there is nothing to remember — an ephemeral remark, or an explicit *"don't remember this"*. Escalating those would spend a call to learn nothing, and on the second would let the model overturn an instruction the frames already honoured.
 
@@ -93,11 +93,11 @@ Measured on the 500-record corpus (`python3 -m tests.cascade_curve`, needs no mo
 
 | `escalate_below` | model calls | saved vs `hybrid` |
 |---|---|---|
-| 0.70 (default) | 303 / 500 | **39%** |
+| 0.70 (default) | 276 / 500 | **45%** |
 | 0.75 | 345 / 500 | 31% |
 | 0.80 | 407 / 500 | 19% |
 
-39%, not the 70% a first guess suggests: this corpus is 47% transcripts no frame matches, and those all escalate. The number is measured rather than asserted, which is the point of putting the decision where it can be swept.
+45%, not the 70% a first guess suggests: this corpus is 47% transcripts no frame matches, and those all escalate. The number is measured rather than asserted, which is the point of putting the decision where it can be swept.
 
 An earlier version of this saved 49% by also treating "this looks ephemeral" as settled. That was wrong. *"We switched the Golden Goose prototype to Rust last week"* was scored ephemeral by the heuristic — past tense, no scheduling word — so the cascade never escalated and a real project-state change was dropped silently. A heuristic's **guess** must never be the reason the second sensor goes unconsulted; only an explicit instruction from the person is. Ten points of cost saving for a class of silent data loss is a bad trade, and the failure only appeared because the walkthrough traced a real sequence rather than testing layers in isolation.
 
@@ -114,7 +114,7 @@ That is exactly the condition the reviewer's corpus creates, and the evaluation 
 | On a corpus it was not written against | Before | After |
 |---|---|---|
 | Memories learned from 500 records | 8 | **23** |
-| Reviewer-style questions answered | 1 / 7 | **5 / 7** |
+| Reviewer-style questions answered | 1 / 7 | **6 / 7** |
 
 `python3 -m tests.foreign_corpus` runs this permanently. It fails the build if the system stops generalising.
 
@@ -126,9 +126,9 @@ That is exactly the condition the reviewer's corpus creates, and the evaluation 
 - **10 controller checks** — provenance on every memory, rejection actually happening, reinforcement rather than duplication, forgetting that archives and logs, evidence spanning more than one dictation, sublinear growth, and three probes asserting that a weak candidate is rejected, a hedged claim stays tentative, and a weak contradiction does *not* overturn an established memory.
 - **5 admission checks** — a small hand-labelled set with fixed confidence/importance values, saying where the admission line should sit.
 
-**Deterministic path: 20/21** (5/6 · 10/10 · 5/5), about 4 seconds end to end.
+**Deterministic path: 21/21** (6/6 · 10/10 · 5/5), about 4 seconds end to end.
 
-The one remaining answer miss is real and left visible: a hashed bag-of-words cannot bridge "assignment" to "internship task", so Kivi abstains rather than guessing. That is the correct failure, and it is the case the embedding backend exists to fix.
+The sixth answer check used to be the one permanent miss: a hashed bag-of-words has zero token overlap between "What assignment am I working on?" and "User has a sarvam ai golden goose internship task" — different words for the same thing. The first fix tried was a global synonym (`assignment` → `task`), and it was wrong: every OTHER task-type memory also carries the word "task" through its `scope=current_tasks` tokens, so the match stopped being about this memory and the ranking was decided by confidence/utility noise instead of relevance. It was also **not** actually the case that switching on embeddings fixed this - measured directly, `nomic-embed-text` ranked the right memory 4th-8th out of 23, behind several generic "follow up about the project evaluation cases" memories the seed corpus happens to repeat once per person name. The fix that worked: the `has` frame now restates a small, genuinely general English near-synonym set (task/assignment/job) directly in the ONE memory's own canonical text (`rule_sensor.WORK_ITEM_ALIASES`), so the match is exact to the memory that deserves it rather than diffused across every memory of that type. No model involved.
 
 ### Cost, latency, growth
 
@@ -155,9 +155,9 @@ The first version of this reported **FLAT** — every setting scored identically
 
 Stated plainly, because several of them are the interesting part.
 
-- **The no-model path abstains on paraphrase.** Two evaluation questions and some foreign-corpus questions fail this way. It is a real ceiling on bag-of-words retrieval, not a bug, and it is why the model path exists.
+- **The no-model path can still abstain on paraphrase it has no frame or alias for.** The one case the evaluation caught (`assignment`/`internship task`) is fixed; a real tool-name-trimming bug found while verifying it is fixed too (`_trim_tool` was stripping "in React" off "a coded prototype in React", losing the tool name entirely - not a vocabulary gap, an over-eager regex). One foreign-corpus question still fails (`tests/foreign_corpus.py`): "office" now IS in the stored memory's text (`works_out_of` restates it), and scores 1.01 against an answer_threshold of 1.10 - close, but a competing `works_at` memory edges it out on confidence/utility rather than relevance, and two function words in the query ("which", "out") dilute the coverage ratio further. Each instance found so far has been a specific, fixable gap; this last one is a genuine ceiling of scalar-weighted bag-of-words scoring, not one more missing alias, and patching it with a corpus-specific tweak was the wrong trade.
 - **The frame extractor is still a rule system.** It is domain-free now, but it only understands the sentence shapes it has frames for. Unusual phrasing is silently missed rather than mis-learned — a safe failure, not a harmless one. `--extractor cascade` is the mitigation: it detects the miss and escalates, rather than requiring a human to notice.
-- **The cascade's cost saving is corpus-dependent.** 39% here; a corpus with more parseable speech saves more, one with more free-form narration saves less. `tests/cascade_curve.py` re-measures it on any corpus with `--corpus`.
+- **The cascade's cost saving is corpus-dependent.** 45% here; a corpus with more parseable speech saves more, one with more free-form narration saves less. `tests/cascade_curve.py` re-measures it on any corpus with `--corpus`.
 - **mem0 was considered and not used.** It is the closest prior art and is well-engineered. It was rejected because its update step delegates the retain/update/delete decision to the LLM, which is precisely the decision this system exists to make inspectable — and because it has no zero-install path. The controller is storage-agnostic, so adopting mem0 for extraction and retrieval while keeping decision authority here (`add(..., infer=False)`) is a config change rather than a rewrite.
 - **`OllamaNLI` is an instruct model prompted as a classifier.** It is real inference and beats the old whitelist, but a dedicated cross-encoder is better calibrated — `pip install torch transformers` and `--nli cross-encoder`.
 - **Retrieval scans all active memories.** Fine at this scale, needs an ANN index at production scale.

@@ -1,14 +1,13 @@
 {
   "all_results": [
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.65,
@@ -17,14 +16,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.65,
@@ -33,14 +31,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.65,
@@ -49,14 +46,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.65,
@@ -65,14 +61,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.65,
@@ -81,14 +76,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.65,
@@ -97,14 +91,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.65,
@@ -113,14 +106,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.65,
@@ -129,14 +121,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 17,
-      "passed": 20,
-      "selectivity": 0.915,
+      "failing": [],
+      "memories": 16,
+      "passed": 21,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.65,
@@ -145,14 +136,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.35,
@@ -161,14 +151,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.35,
@@ -177,14 +166,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.35,
@@ -193,14 +181,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.35,
@@ -209,14 +196,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.35,
@@ -225,14 +211,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.35,
@@ -241,14 +226,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.45,
@@ -257,14 +241,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.45,
@@ -273,14 +256,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.45,
@@ -289,14 +271,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.45,
@@ -305,14 +286,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.45,
@@ -321,14 +301,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.45,
@@ -337,14 +316,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.45,
@@ -353,14 +331,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.45,
@@ -369,14 +346,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.45,
@@ -385,14 +361,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.55,
@@ -401,14 +376,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.55,
@@ -417,14 +391,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.55,
@@ -433,14 +406,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.55,
@@ -449,14 +421,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.55,
@@ -465,14 +436,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.55,
@@ -481,14 +451,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.55,
@@ -497,14 +466,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.55,
@@ -513,14 +481,13 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 5,
+      "answer_checks": 6,
       "controller_checks": 10,
-      "failing": [
-        "assignment"
-      ],
-      "memories": 24,
-      "passed": 20,
-      "selectivity": 0.88,
+      "failing": [],
+      "memories": 23,
+      "passed": 21,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.55,
@@ -529,14 +496,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.75,
@@ -545,14 +513,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.75,
@@ -561,14 +530,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.75,
@@ -577,14 +547,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.75,
@@ -593,14 +564,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.75,
@@ -609,14 +581,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.45,
         "admit_utility": 0.75,
@@ -625,14 +598,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.75,
@@ -641,14 +615,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.75,
@@ -657,14 +632,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.6,
         "admit_utility": 0.75,
@@ -673,14 +649,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.75,
@@ -689,14 +666,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.75,
@@ -705,14 +683,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 9,
-      "passed": 19,
-      "selectivity": 0.955,
+      "memories": 8,
+      "passed": 20,
+      "selectivity": 0.96,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.75,
@@ -721,14 +700,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.35,
@@ -737,14 +717,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.35,
@@ -753,14 +734,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.35,
@@ -769,14 +751,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.45,
@@ -785,14 +768,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.45,
@@ -801,14 +785,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.45,
@@ -817,14 +802,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.55,
@@ -833,14 +819,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.55,
@@ -849,14 +836,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.55,
@@ -865,14 +853,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.65,
@@ -881,14 +870,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.65,
@@ -897,14 +887,15 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 4,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "borderline_preference"
       ],
-      "memories": 17,
-      "passed": 19,
-      "selectivity": 0.915,
+      "memories": 16,
+      "passed": 20,
+      "selectivity": 0.92,
       "settings": {
         "admit_confidence": 0.75,
         "admit_utility": 0.65,
@@ -913,14 +904,16 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 3,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "passing_aside",
+        "vague_mention"
       ],
-      "memories": 24,
-      "passed": 18,
-      "selectivity": 0.88,
+      "memories": 23,
+      "passed": 19,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.35,
@@ -929,14 +922,16 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 3,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "passing_aside",
+        "vague_mention"
       ],
-      "memories": 24,
-      "passed": 18,
-      "selectivity": 0.88,
+      "memories": 23,
+      "passed": 19,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.35,
@@ -945,14 +940,16 @@
       "total": 21
     },
     {
-      "answer_checks": 5,
+      "admission_checks": 3,
+      "answer_checks": 6,
       "controller_checks": 10,
       "failing": [
-        "assignment"
+        "passing_aside",
+        "vague_mention"
       ],
-      "memories": 24,
-      "passed": 18,
-      "selectivity": 0.88,
+      "memories": 23,
+      "passed": 19,
+      "selectivity": 0.885,
       "settings": {
         "admit_confidence": 0.3,
         "admit_utility": 0.35,
@@ -962,14 +959,13 @@
     }
   ],
   "best": {
-    "answer_checks": 5,
+    "admission_checks": 5,
+    "answer_checks": 6,
     "controller_checks": 10,
-    "failing": [
-      "assignment"
-    ],
-    "memories": 17,
-    "passed": 20,
-    "selectivity": 0.915,
+    "failing": [],
+    "memories": 16,
+    "passed": 21,
+    "selectivity": 0.92,
     "settings": {
       "admit_confidence": 0.3,
       "admit_utility": 0.65,
@@ -980,38 +976,38 @@
   "grid_size": 60,
   "mean_score_by_threshold_value": {
     "admit_confidence": {
-      "0.3": 19.4,
-      "0.45": 19.8,
-      "0.6": 19.8,
-      "0.75": 19.0
+      "0.3": 20.4,
+      "0.45": 20.8,
+      "0.6": 20.8,
+      "0.75": 20.0
     },
     "admit_utility": {
-      "0.35": 19.25,
-      "0.45": 19.75,
-      "0.55": 19.75,
-      "0.65": 19.75,
-      "0.75": 19.0
+      "0.35": 20.25,
+      "0.45": 20.75,
+      "0.55": 20.75,
+      "0.65": 20.75,
+      "0.75": 20.0
     },
     "supersede_confidence": {
-      "0.62": 19.5,
-      "0.72": 19.5,
-      "0.82": 19.5
+      "0.62": 20.5,
+      "0.72": 20.5,
+      "0.82": 20.5
     }
   },
   "memory_count_range": [
-    9,
-    24
+    8,
+    23
   ],
   "records_per_trial": 200,
   "score_range": [
-    18,
     19,
-    20
+    20,
+    21
   ],
   "shipped_defaults": {
     "admit_confidence": 0.5,
     "admit_utility": 0.55,
     "supersede_confidence": 0.72
   },
-  "verdict": "Scores ranged 18-20 across 60 settings; the surface discriminates and `best` is a defensible choice."
+  "verdict": "Scores ranged 19-21 across 60 settings; the surface discriminates and `best` is a defensible choice. NOTE: supersede_confidence scored identically at every value tested, so this evaluation does not falsify it - treat the shipped value there as unvalidated. NOTE: the shipped value of admit_confidence is not a point in the grid, so it was never evaluated; add it to CALIBRATION_GRID before citing this as support."
 }

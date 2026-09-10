@@ -13,7 +13,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 
 MEMORY_TYPES = ("preference", "fact", "project_state", "task", "event")
@@ -135,7 +135,7 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
 
 
 STOPWORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
+    "a", "about", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
     "have", "he", "her", "hey", "i", "in", "into", "is", "it", "kivi",
     "me", "my", "of", "on", "or", "our", "please", "should", "that", "the",
     "this", "to", "use", "was", "we", "what", "when", "where", "who", "with",
@@ -186,9 +186,6 @@ def is_exclusive(predicate: str) -> bool:
     return name.endswith("_is") or name.startswith("prefers_")
 
 
-# Kept for backwards compatibility with anything importing the old name.
-EXCLUSIVE_PREDICATES = EXCLUSIVE_PREDICATE_NAMES
-
 
 def utc_now() -> str:
     return datetime.utcnow().replace(microsecond=0).isoformat()
@@ -205,6 +202,28 @@ def stable_id(prefix: str, *parts: object) -> str:
 
 def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip())
+
+
+DISFLUENCY = re.compile(
+    r"\b(um+|uh+|erm+|hmm+|you know|i mean|sort of|kind of|like i said|basically)\b",
+    re.IGNORECASE,
+)
+
+
+def strip_disfluency(text: str) -> str:
+    """Remove spoken filler.
+
+    Extraction runs on whatever text it is given. When that text is raw ASR
+    rather than a cleaned transcript, filler ends up *inside* the extracted
+    value - "I prefer detailed written feedback you know" became
+    `prefers_know = "detailed written feedback you know"`, because the head
+    noun of the phrase was "know". Stripping filler first is language-level,
+    not domain-level, and it keeps the same code correct on raw and formatted
+    input alike.
+    """
+    cleaned = DISFLUENCY.sub("", text)
+    cleaned = re.sub(r"\s+([,.;:!?])", r"\1", cleaned)
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 def expand_identifier(value: str) -> list[str]:
@@ -253,6 +272,15 @@ def stem(word: str) -> str:
 def tokens(text: str) -> set[str]:
     values = set()
     for raw in re.findall(r"[a-zA-Z0-9_:.\-]+", text.lower()):
+        # A sentence-final period rides along with the last word ("task."),
+        # because the character class above deliberately keeps '.' for
+        # identifiers like "project:golden_goose" and "kivi.db". Every stored
+        # canonical_text ends in a sentence, so without this every memory's
+        # last content word produced a phantom "word." token alongside the
+        # real one - harmless to matching (queries never type the trailing
+        # period) but it inflated the token set and skewed idf() with noise
+        # tokens that exist nowhere else.
+        raw = raw.rstrip(".")
         for token in expand_identifier(raw):
             mapped = SYNONYMS.get(token, token)
             if len(mapped) > 2 and mapped not in STOPWORDS:
@@ -261,6 +289,46 @@ def tokens(text: str) -> set[str]:
                 if stemmed != mapped and len(stemmed) > 2 and stemmed not in STOPWORDS:
                     values.add(stemmed)
     return values
+
+
+def overlap_ratio(query_tokens: set[str], other: set[str]) -> float:
+    """Fraction of the QUERY the other text accounts for, in [0, 1].
+
+    The denominator is deliberately the query, not the other side. Scoring
+    `|a & b| / |b|` rewards whatever is shortest: a two-token intent exemplar
+    like "what did you skip" scored 0.50 against any question containing the
+    word "did", which is how "What did I switch the prototype to?" was routed
+    to the ignored-audit handler. Normalising on the query asks the question
+    that actually matters - how much of what was asked does this cover - and is
+    a monotone rescaling per query, so ranking within one query is unchanged
+    while the number becomes comparable across queries and thresholdable.
+    """
+    if not query_tokens:
+        return 0.0
+    return len(query_tokens & other) / len(query_tokens)
+
+
+def jaccard(a: set[str], b: set[str]) -> float:
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
+
+
+def same_thing(a: str, b: str) -> bool:
+    """True when two object strings name the same thing.
+
+    Used by the controller to collapse near-duplicate memories without needing
+    a model: "concise explanation" and "concise technical explanations" are one
+    preference stated twice, not two. Containment catches the common case (one
+    phrasing is a more specific version of the other); Jaccard catches
+    reorderings. Both run on stemmed content tokens, so this is morphology
+    rather than vocabulary.
+    """
+    ta, tb = tokens(a), tokens(b)
+    if not ta or not tb:
+        return False
+    if ta <= tb or tb <= ta:
+        return True
+    return jaccard(ta, tb) >= 0.6
 
 
 def parse_dt(value: str) -> datetime:

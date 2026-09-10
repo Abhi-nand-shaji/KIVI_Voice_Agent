@@ -15,7 +15,8 @@
       "nli": "off",
       "nli_model": "qwen2.5:7b-instruct",
       "ollama_host": "http://127.0.0.1:11434",
-      "retrieval": "lexical"
+      "retrieval": "lexical",
+      "router": "exemplar"
     },
     "embedder": {
       "backend": "hash-bow",
@@ -54,7 +55,8 @@
         "nli": "off",
         "nli_model": "qwen2.5:7b-instruct",
         "ollama_host": "http://127.0.0.1:11434",
-        "retrieval": "lexical"
+        "retrieval": "lexical",
+        "router": "exemplar"
       },
       "embedder": {
         "backend": "hash-bow",
@@ -77,49 +79,50 @@
       }
     },
     "counts": {
-      "decisions": 501,
-      "memories": 24,
-      "memory_evidence": 177,
-      "transcripts": 500
+      "decisions": 526,
+      "memories": 25,
+      "memory_evidence": 179,
+      "transcripts": 501
     },
     "decisions_by_action": {
-      "ADD": 22,
+      "ADD": 24,
+      "FORGET": 1,
       "NO_OP": 324,
-      "REINFORCE": 152,
+      "REINFORCE": 174,
       "UPDATE": 3
     },
     "decisions_with_nli": 0,
     "memories_by_source": {
-      "rule": 24
+      "rule": 25
     },
     "memories_by_status": {
-      "active": 22,
+      "active": 23,
       "archived": 2
     }
   },
   "decisions": 501,
   "growth": {
-    "bytes_per_transcript": 3399.7,
+    "bytes_per_transcript": 3491.0,
     "latest": {
-      "active_memories": 22,
-      "db_bytes": 1699840,
-      "decisions": 501,
-      "embedding_rows": 524,
-      "evidence_rows": 177,
-      "id": 10,
-      "memories": 24,
-      "sampled_at": "2026-09-01 14:54:58",
-      "transcripts": 500
+      "active_memories": 23,
+      "db_bytes": 1748992,
+      "decisions": 526,
+      "embedding_rows": 526,
+      "evidence_rows": 179,
+      "id": 20,
+      "memories": 25,
+      "sampled_at": "2026-09-10 13:04:33",
+      "transcripts": 501
     },
-    "memories_per_100_transcripts": 4.4,
-    "selectivity": 0.956
+    "memories_per_100_transcripts": 4.59,
+    "selectivity": 0.9541
   },
   "latency": {
     "inside_model_calls_ms": 0.0,
     "per_model_call_ms": 0.0,
-    "per_record_ms": 138.73,
+    "per_record_ms": 1.32,
     "share_of_time_in_model": 0.0,
-    "total_ms": 69364.19
+    "total_ms": 661.44
   },
   "model_usage": {
     "chat_calls": 0,
@@ -128,7 +131,7 @@
     "external_api_calls": 0,
     "note": "Deterministic mode: no model calls at all."
   },
-  "recorded_at": "2026-09-01T14:54:58",
+  "recorded_at": "2026-09-10T13:04:33",
   "records_processed": 500,
   "source": "data/seed_corpus.jsonl"
 }

@@ -68,6 +68,41 @@ Conflict handling is structural rather than enumerated. `is_exclusive()` decides
 
 All default to `auto`. Fallback is never silent — `doctor`, `inspect --kind backends` and the engineering view all report it.
 
+### Spending the model only where it earns its place
+
+`--extractor` has four settings, and the interesting one is `cascade`.
+
+| | model calls per transcript | |
+|---|---|---|
+| `rule` | 0 | frames only |
+| `llm` | 1 | model only; frames never run |
+| `hybrid` | 1 | both on every record, unioned, frames win ties |
+| `cascade` | 0 or 1 | frames first; the model only where they fell short |
+
+`cascade` escalates on three signals, and the *controller* owns all three thresholds — the same principle as admission:
+
+1. no frame matched;
+2. the best matching frame was not confident (`--escalate-below`, default 0.70);
+3. the frames matched but account for less than `--escalate-coverage` (default 50%) of the transcript's content words.
+
+(3) is the one a plain confidence gate misses: a transcript can match one frame confidently and still leave most of what was said unparsed. On the seed corpus it is the only reason 42 of the 276 escalations happen — they would all have been skipped on confidence alone.
+
+It also declines to escalate when the frames made a **positive** determination that there is nothing to remember — an ephemeral remark, or an explicit *"don't remember this"*. Escalating those would spend a call to learn nothing, and on the second would let the model overturn an instruction the frames already honoured.
+
+Measured on the 500-record corpus (`python3 -m tests.cascade_curve`, needs no model, because the escalation decision depends only on frame output):
+
+| `escalate_below` | model calls | saved vs `hybrid` |
+|---|---|---|
+| 0.70 (default) | 276 / 500 | **45%** |
+| 0.75 | 345 / 500 | 31% |
+| 0.80 | 407 / 500 | 19% |
+
+45%, not the 70% a first guess suggests: this corpus is 47% transcripts no frame matches, and those all escalate. The number is measured rather than asserted, which is the point of putting the decision where it can be swept.
+
+An earlier version of this saved 49% by also treating "this looks ephemeral" as settled. That was wrong. *"We switched the Golden Goose prototype to Rust last week"* was scored ephemeral by the heuristic — past tense, no scheduling word — so the cascade never escalated and a real project-state change was dropped silently. A heuristic's **guess** must never be the reason the second sensor goes unconsulted; only an explicit instruction from the person is. Ten points of cost saving for a class of silent data loss is a bad trade, and the failure only appeared because the walkthrough traced a real sequence rather than testing layers in isolation.
+
+`python3 -m tests.escalation_walkthrough` runs the whole proposition end to end on six dictations — frames-only, escalated, both-sensors, an NLI-caught contradiction, an escalation that is still rejected, and a retraction — then asks four questions. 13 checks, no model needed.
+
 ## Why extraction is domain-free
 
 The first version of the deterministic extractor matched this corpus by name — `golden goose`, `sarvam`, `predictive maintenance`, `\bi work at (...)`. It scored 11/11 on its own evaluation. Run against a *different* user's 500 dictations it learned **8 memories** and abstained on nearly every question, because "I work **out of** the Pune office" does not match `i work at`.
@@ -91,9 +126,9 @@ That is exactly the condition the reviewer's corpus creates, and the evaluation 
 - **10 controller checks** — provenance on every memory, rejection actually happening, reinforcement rather than duplication, forgetting that archives and logs, evidence spanning more than one dictation, sublinear growth, and three probes asserting that a weak candidate is rejected, a hedged claim stays tentative, and a weak contradiction does *not* overturn an established memory.
 - **5 admission checks** — a small hand-labelled set with fixed confidence/importance values, saying where the admission line should sit.
 
-**Deterministic path: 20/21** (5/6 · 10/10 · 5/5), about 4 seconds end to end.
+**Deterministic path: 21/21** (6/6 · 10/10 · 5/5), about 4 seconds end to end.
 
-The one remaining answer miss is real and left visible: a hashed bag-of-words cannot bridge "assignment" to "internship task", so Kivi abstains rather than guessing. That is the correct failure, and it is the case the embedding backend exists to fix.
+The sixth answer check used to be the one permanent miss: a hashed bag-of-words has zero token overlap between "What assignment am I working on?" and "User has a sarvam ai golden goose internship task" — different words for the same thing. The first fix tried was a global synonym (`assignment` → `task`), and it was wrong: every OTHER task-type memory also carries the word "task" through its `scope=current_tasks` tokens, so the match stopped being about this memory and the ranking was decided by confidence/utility noise instead of relevance. It was also **not** actually the case that switching on embeddings fixed this - measured directly, `nomic-embed-text` ranked the right memory 4th-8th out of 23, behind several generic "follow up about the project evaluation cases" memories the seed corpus happens to repeat once per person name. The fix that worked: the `has` frame now restates a small, genuinely general English near-synonym set (task/assignment/job) directly in the ONE memory's own canonical text (`rule_sensor.WORK_ITEM_ALIASES`), so the match is exact to the memory that deserves it rather than diffused across every memory of that type. No model involved.
 
 ### Cost, latency, growth
 
@@ -106,7 +141,7 @@ Measured on the 500-record corpus, written into every results file:
 | External API calls | 0 | 0 (localhost) |
 | Cost | $0.00 | $0.00 |
 
-Growth is sampled ten times during ingest into a `growth_samples` table: **23 active memories from 500 dictations — 4.6 per 100, selectivity 0.954**, about 3.4 KB of database per dictation. Memory grows far more slowly than the log, which is the whole claim — Kivi is not keeping a copy of what you said.
+Growth is sampled ten times during ingest into a `growth_samples` table: **22 active memories from 500 dictations — 4.4 per 100, selectivity 0.956**, about 3.4 KB of database per dictation. Memory grows far more slowly than the log, which is the whole claim — Kivi is not keeping a copy of what you said.
 
 Caching keeps the model path affordable: the extraction prompt deliberately omits the timestamp so repeated dictations are content-addressable, taking the corpus from 578 calls to 233.
 
@@ -114,16 +149,19 @@ Caching keeps the model path affordable: the extraction prompt deliberately omit
 
 `python3 -m kivi_memory calibrate` grid-searches the three admission thresholds across 60 configurations and reports the surface with a per-threshold sensitivity breakdown.
 
-The first version of this reported **FLAT** — every setting scored identically, meaning the evaluation could not falsify the thresholds at all. That was a finding about the evaluation, not a validation of the numbers. Adding the labelled admission set and widening the grid fixed it: scores now range **17–19 across 60 settings**, so `best` is a defensible choice rather than three constants someone liked. The tool still prints its own verdict, and will say FLAT again if the surface ever stops discriminating.
+The first version of this reported **FLAT** — every setting scored identically, meaning the evaluation could not falsify the thresholds at all. That was a finding about the evaluation, not a validation of the numbers. Adding the labelled admission set and widening the grid fixed it: scores now range **18–20 across 60 settings**, so `best` is a defensible choice rather than three constants someone liked. The tool still prints its own verdict, and will say FLAT again if the surface ever stops discriminating.
 
 ## Limitations
 
 Stated plainly, because several of them are the interesting part.
 
-- **The no-model path abstains on paraphrase.** Two evaluation questions and some foreign-corpus questions fail this way. It is a real ceiling on bag-of-words retrieval, not a bug, and it is why the model path exists.
-- **The frame extractor is still a rule system.** It is domain-free now, but it only understands the sentence shapes it has frames for. Unusual phrasing is silently missed rather than mis-learned — a safe failure, not a harmless one.
+- **The no-model path can still abstain on paraphrase it has no frame or alias for.** The one case the evaluation caught (`assignment`/`internship task`) is fixed; a real tool-name-trimming bug found while verifying it is fixed too (`_trim_tool` was stripping "in React" off "a coded prototype in React", losing the tool name entirely - not a vocabulary gap, an over-eager regex). One foreign-corpus question still fails (`tests/foreign_corpus.py`): "office" now IS in the stored memory's text (`works_out_of` restates it), and scores 1.01 against an answer_threshold of 1.10 - close, but a competing `works_at` memory edges it out on confidence/utility rather than relevance, and two function words in the query ("which", "out") dilute the coverage ratio further. Each instance found so far has been a specific, fixable gap; this last one is a genuine ceiling of scalar-weighted bag-of-words scoring, not one more missing alias, and patching it with a corpus-specific tweak was the wrong trade.
+- **The frame extractor is still a rule system.** It is domain-free now, but it only understands the sentence shapes it has frames for. Unusual phrasing is silently missed rather than mis-learned — a safe failure, not a harmless one. `--extractor cascade` is the mitigation: it detects the miss and escalates, rather than requiring a human to notice.
+- **The cascade's cost saving is corpus-dependent.** 45% here; a corpus with more parseable speech saves more, one with more free-form narration saves less. `tests/cascade_curve.py` re-measures it on any corpus with `--corpus`.
+- **mem0 was considered and not used.** It is the closest prior art and is well-engineered. It was rejected because its update step delegates the retain/update/delete decision to the LLM, which is precisely the decision this system exists to make inspectable — and because it has no zero-install path. The controller is storage-agnostic, so adopting mem0 for extraction and retrieval while keeping decision authority here (`add(..., infer=False)`) is a config change rather than a rewrite.
 - **`OllamaNLI` is an instruct model prompted as a classifier.** It is real inference and beats the old whitelist, but a dedicated cross-encoder is better calibrated — `pip install torch transformers` and `--nli cross-encoder`.
 - **Retrieval scans all active memories.** Fine at this scale, needs an ANN index at production scale.
+- **Scopes are still not unified, though they no longer block deduplication.** A project named two ways — "the Golden Goose task" and "the Golden Goose prototype" — still produces two scope slugs. Conflict detection used to be restricted to the same `(subject, scope)` pair, so a claim under a differently-named scope was invisible; the controller's neighbourhood is now scoped to the subject only, with same-scope as a ranking bonus, and `find_near_duplicate` merges same-relation claims across scopes with no model. What is still missing is clustering the slugs themselves, so the two scope names remain distinct in the audit trail.
 - **NLI may only archive memories for `preference`, `fact` and `project_state`.** Tasks and events are multi-valued; a model that judged two to-dos "contradictory" would quietly delete a task list. That constraint is in the controller, not the prompt.
 - **The seed corpus is synthetic and its anchors are known**, so its accuracy measures wiring and policy, not real-world extraction quality. `tests/foreign_corpus.py` exists because of this.
 - **The interface has no audio.** Dictation is typed. The assignment does not require speech recognition, and nothing downstream depends on where the text came from.
@@ -136,20 +174,42 @@ The corpus is synthetic and generated by code (`seed.py`, `tests/foreign_corpus.
 
 ```text
 kivi_memory/
-  frames.py       domain-free extraction frames
-  extractors.py   rule and LLM sensors, both emitting one Candidate type
-  engine.py       the memory controller: ingest, dictate, ask, forget, growth
+  # sensors - propose Candidates, decide nothing
+  frames.py       25 domain-free grammatical frames
+  rule_sensor.py  RuleExtractor: the frames over a transcript
+  llm_sensor.py   LlmExtractor: prompts, schema, constrained generation
+  extractors.py   how the two are combined: rule / llm / hybrid / cascade
+
+  # the deterministic middle - no model touches this
+  controller.py   the decision ladder: ADD / UPDATE / REINFORCE / REJECT
+  retrieval.py    hybrid scoring, decay, the abstention floor
   core.py         Candidate, utility, decay, exclusivity, tokenisation
   config.py       every threshold and backend switch in one place
-  nli.py          entailment / contradiction, cross-encoder or prompted
-  embeddings.py   Ollama vectors with a deterministic offline fallback
+
+  # the read path
+  query.py        ask: routing and the five answer handlers
   intent.py       query routing: LLM classifier or nearest exemplar
-  answerer.py     grounded generation and dictation polishing
+  answerer.py     grounded generation; citations enforced structurally
+  nli.py          entailment / contradiction, cross-encoder or prompted
+
+  # plumbing
+  engine.py       wiring and the public API
+  inspection.py   read-only views: stats, memories, decisions, transcripts
+  embeddings.py   Ollama vectors with a deterministic offline fallback
   llm.py          local Ollama and OpenAI-compatible transports, with caching
   db.py           schema and migrations
-  evaluation.py   the reproducible evaluation and threshold calibration
   server.py       the local HTTP API
+
+  # measurement
+  eval_cases.py   the questions, controller invariants and labelled set
+  evaluation.py   the reproducible harness and backend comparison
+  calibration.py  threshold grid search
+  seed.py         the fixed-seed 500-record corpus
 web/              the interface
-tests/            fake_ollama.py, run_llm_path.py (21 checks), foreign_corpus.py
+tests/            fake_ollama.py, run_llm_path.py (28 checks),
+                  escalation_walkthrough.py (13 checks), foreign_corpus.py,
+                  nli_demo.py, cascade_curve.py
 docs/             product positioning and vision (candidate's own writing)
 ```
+
+No file exceeds 580 lines and each has one job. The three that were large — `engine.py` at 1265, `extractors.py` at 652, `evaluation.py` at 622 — were split along the seams the architecture already had: sensor from combination, policy from wiring, cases from harness.

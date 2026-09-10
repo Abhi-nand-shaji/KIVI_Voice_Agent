@@ -34,7 +34,14 @@ CLAUSE_BREAK = re.compile(
 )
 
 TRAILING_NOISE = re.compile(
-    r"\s+(?:for now|right now|these days|at the moment|today|currently|please|thanks)\b\.?$",
+    r"\s+(?:for now|right now|now|these days|at the moment|today|currently|"
+    r"anymore|any more|going forward|from now on|please|thanks|"
+    # When something happened is not part of what it is. "We switched the
+    # prototype to Rust last week" is a claim about Rust, not about last week;
+    # leaving the phrase on produced the value "rust last week", which then
+    # fails to match a later mention of plain "rust".
+    r"last (?:week|month|year|night)|yesterday|this (?:week|month|morning|afternoon|evening))"
+    r"\b\.?$",
     re.IGNORECASE,
 )
 
@@ -44,7 +51,8 @@ WEAK_HEADS = {
     "work", "lot", "bit", "kind", "sort", "way", "time", "times",
 }
 
-HEDGE_MARKERS = ("maybe", "might", "thinking about", "considering", "probably", "perhaps", "not sure")
+HEDGE_MARKERS = ("maybe", "might", "thinking about", "considering", "probably", "perhaps",
+                 "not sure", "i think", "i guess", "i suppose", "leaning towards", "leaning toward")
 CORRECTION_MARKERS = (
     "actually", "no longer", "instead", "switched", "now my", "now using",
     "moved off", "we moved", "changed to", "from now on", "correction",
@@ -75,8 +83,16 @@ def slug(value: str, max_words: int = 4) -> str:
     return "_".join(words[:max_words]) or "general"
 
 
+# A prepositional phrase modifies the head noun, it is not the head noun.
+# "feedback on drafts" is about feedback; "notes for the review" is about notes.
+PREPOSITIONAL_TAIL = re.compile(
+    r"\s+(?:on|about|for|with|regarding|around|during|in|at|from|to)\s+.*$",
+    re.IGNORECASE,
+)
+
+
 def head_noun(value: str) -> str:
-    """Last content word of a phrase, singularised - the topic key for a predicate.
+    """Head noun of a phrase, singularised - the topic key for a predicate.
 
     Stemming matters here more than it looks. The head noun becomes part of the
     predicate name, and the predicate name is the memory's identity. Without it,
@@ -87,7 +103,11 @@ def head_noun(value: str) -> str:
     """
     from .core import stem  # noqa: PLC0415  (core does not import frames)
 
-    words = [w for w in re.findall(r"[a-z0-9]+", value.lower()) if len(w) > 2]
+    # Strip a trailing prepositional phrase first, so "detailed written
+    # feedback on drafts" keys on `feedback`, not `draft` - otherwise one
+    # preference stated two ways becomes two memories that never reconcile.
+    trimmed = PREPOSITIONAL_TAIL.sub("", value).strip() or value
+    words = [w for w in re.findall(r"[a-z0-9]+", trimmed.lower()) if len(w) > 2]
     for word in reversed(words):
         if word not in WEAK_HEADS:
             return stem(word)
@@ -182,9 +202,35 @@ def _valid_project(project: str) -> bool:
     return bool(project) and project.lower() not in NON_PROJECT and len(project) > 2
 
 
+# The trailing-phrase strip a tool name needs is narrower than a general noun's.
+# `head_noun` uses the full PREPOSITIONAL_TAIL because "feedback on drafts" is
+# about feedback, full stop - "on drafts" is pure modifier. A tool name is
+# different: "in" and "to" routinely introduce the tool ITSELF ("prototyping
+# in Python", "ported to Go", "a coded prototype in React"), not a modifier of
+# it. Reusing PREPOSITIONAL_TAIL here stripped exactly that: "a coded
+# prototype in React" lost "React" - the one word the object was FOR - leaving
+# "coded prototype", which then answered a "what tool" question without naming
+# a tool. "for"/"about"/"regarding"/"around"/"during" are still genuine
+# modifiers ("Python for the semantic memory work" -> "Python") and stay.
+TOOL_TRAILING_MODIFIER = re.compile(
+    r"\s+(?:for|about|regarding|around|during)\s+.*$",
+    re.IGNORECASE,
+)
+
+
 def _trim_tool(value: str) -> str:
-    """A tool name ends where the sentence starts comparing it to something."""
-    return re.split(r"\s+(?:with|instead of|rather than|over|and not)\s+", value, maxsplit=1)[0].strip()
+    """A tool name is a noun phrase, and it ends where the sentence moves on.
+
+    Two ways it runs long. A comparison - "Rust instead of Python" - and a
+    trailing prepositional phrase, which is what the greedy capture in
+    `project_tool_for` produces: "For the Golden Goose task I am prototyping in
+    Python for the semantic memory work" yielded the tool
+    "python for the semantic memory work", which then matches nothing when the
+    same project is mentioned again with plain "Python".
+    """
+    trimmed = re.split(
+        r"\s+(?:with|instead of|rather than|over|and not)\s+", value, maxsplit=1)[0].strip()
+    return (TOOL_TRAILING_MODIFIER.sub("", trimmed).strip() or trimmed).strip()
 
 
 def _project_tool(project_group: int, tool_group: int):
@@ -289,7 +335,10 @@ FRAMES: list[Frame] = [
           "project_state", "", 0.82, 0.82, 0.05, _project_tool(2, 1), "Tool choice on a named piece of work.", family="project_tool"),
     Frame("moved_project_tool", r"\bwe (?:moved|switched|took) (?:the )?([^.,;]{3,50}?) (?:off|from) [^.,;]{2,40}? to ([^.,;]{2,50})",
           "project_state", "", 0.88, 0.9, 0.05, _project_switch, "Explicit change of tool on a named piece of work.", family="project_tool"),
-    Frame("switched_project", r"\bi (?:switched|moved) (?:the )?([^.,;]{3,50}?) to ([^.,;]{2,50})",
+    # "we" as well as "i": a tool decision is usually reported in the first
+    # person plural, and the frame that handled "we" required an explicit
+    # "off"/"from", so "we switched the prototype to Rust" matched neither.
+    Frame("switched_project", r"\b(?:i|we) (?:switched|moved|migrated|ported) (?:the )?([^.,;]{3,50}?) to ([^.,;]{2,50})",
           "project_state", "", 0.88, 0.9, 0.05, _project_switch, "Explicit change on a named piece of work.", family="project_tool"),
     Frame("focus", r"\b(?:the )?([^.,;]{3,50}?) is (?:the main thing on my plate|my main focus|my priority|the priority)",
           "project_state", "current_focus", 0.84, 0.86, 0.06, _focus, "Stated current focus."),
@@ -298,9 +347,17 @@ FRAMES: list[Frame] = [
           "task", "current_tasks", 0.74, 0.78, 0.14, _task, "Action item stated by the user.", family="task"),
     Frame("remind", r"\bremind me (?:that |to |about )?([^.,;]{4,90})",
           "task", "current_tasks", 0.78, 0.82, 0.12, _task, "Explicit reminder request.", family="task"),
-    Frame("follow_up", r"\b(?:follow up|check in|circle back) with ([^.,;]{2,60})",
+    # Both of these capture the WHOLE verb phrase, including the verb. They
+    # used to capture only its object, and the canonical form is
+    # "User needs to {object}." - so "Follow up with Nikhil about the project
+    # evaluation cases" was stored as "User needs to nikhil about the project
+    # evaluation cases." Six of those (one per name in the seed corpus) were
+    # 27% of everything the deterministic path learned: ungrammatical, and
+    # close enough to any question in embedding space to crowd out real
+    # memories. The verb is not decoration; it is what makes the task a task.
+    Frame("follow_up", r"\b((?:follow up|check in|circle back) with [^.,;]{2,60})",
           "task", "current_tasks", 0.7, 0.76, 0.16, _task, "Follow-up commitment.", family="task"),
-    Frame("ship_by", r"\b(?:ship|send|submit|finish|deliver|complete) ([^.,;]{4,70}?) (?:before|by) [^.,;]{2,30}",
+    Frame("ship_by", r"\b((?:ship|send|submit|finish|deliver|complete) [^.,;]{4,70}?) (?:before|by) [^.,;]{2,30}",
           "task", "current_tasks", 0.78, 0.8, 0.13, _task, "Deadline-bearing commitment.", family="task"),
 
     Frame("event_with", r"\b(meeting|call|demo|sync|review|presentation|interview|standup) with ([^.,;]{2,50})",

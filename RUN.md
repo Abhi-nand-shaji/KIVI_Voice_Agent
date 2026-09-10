@@ -148,16 +148,20 @@ python3 -m kivi_memory --deterministic evaluate --records 500 --out data/evaluat
 
 Runs the complete pipeline — generate corpus, ingest, ask, grade — and writes full results. About 4 seconds.
 
-Expected on the deterministic path: **20/21** (5/6 answer checks, 10/10 controller checks, 5/5 admission checks). The one answer miss is real and documented in the README: a bag-of-words retriever cannot bridge "response style" to "concise technical explanations". The system abstains rather than guessing. Drop `--deterministic` to run with the model backends.
+Expected on the deterministic path: **21/21** (6/6 answer checks, 10/10 controller checks, 5/5 admission checks). Drop `--deterministic` to run with the model backends.
 
 Related commands:
 
 ```bash
 python3 -m kivi_memory evaluate --compare --records 500   # deterministic vs local model, same corpus
 python3 -m kivi_memory --deterministic calibrate --records 200   # grid-search the controller thresholds
-python3 -m tests.run_llm_path                             # 21 checks, exercises the model paths with no model installed
+python3 -m tests.run_llm_path                             # 28 checks, exercises the model paths with no model installed
+python3 -m tests.cascade_curve                            # how often the cascade needs the model, and why
+python3 -m tests.escalation_walkthrough                   # the cascade end to end: 6 dictations, 4 questions, 13 checks
 python3 -m tests.foreign_corpus                           # ingest a DIFFERENT user's 500 records and answer questions about them
 ```
+
+`tests/escalation_walkthrough.py` is the one to read if you want to see the whole proposition working on one short sequence: it prints, per dictation, what the frames found, whether the controller escalated and why, what the model added, and what the controller decided — including an NLI-caught contradiction on a predicate no rule anticipated.
 
 `tests/foreign_corpus.py` is the one to run if you have limited time. It is the check that this system was not written against its own test data.
 
@@ -239,15 +243,23 @@ rm -f data/llm_cache.db            # also discard cached model responses (option
 ```bash
 python3 -m kivi_memory --extractor llm --nli llm --retrieval hybrid --answerer llm serve
 python3 -m kivi_memory --extractor hybrid ask "..."     # union of frames and model, frames win ties
+python3 -m kivi_memory --extractor cascade serve        # frames first, model only where they fell short
 python3 -m kivi_memory --nli cross-encoder ask "..."    # needs torch + transformers
 ```
 
 | Flag | Values | Default |
 |---|---|---|
-| `--extractor` | `rule`, `llm`, `hybrid`, `auto` | `auto` |
+| `--extractor` | `rule`, `llm`, `hybrid`, `cascade`, `auto` | `auto` |
 | `--nli` | `off`, `llm`, `cross-encoder`, `auto` | `auto` |
 | `--retrieval` | `lexical`, `hybrid`, `auto` | `auto` |
 | `--answerer` | `template`, `llm`, `auto` | `auto` |
 | `--deterministic` | forces all four to the no-install path | — |
+
+**`cascade` is the recommended setting when a model is available.** It runs the frames first and consults the model only when no frame matched, when the best frame was not confident (`--escalate-below`, default 0.70), or when the frames account for less than half the transcript's content words (`--escalate-coverage`, default 0.50). On the seed corpus that is 276 model calls instead of 500 — 45% fewer — for the same coverage. Query-time routing is deterministic by default (`--router`), so a question costs at most one model call: the one that composes the answer. It never escalates a transcript the person explicitly asked not to remember.
+
+```bash
+python3 -m tests.cascade_curve                    # the cost curve, no model needed
+python3 -m tests.cascade_curve --corpus my.jsonl  # re-measure on your own corpus
+```
 
 `auto` uses a model when one is reachable and falls back when it is not. The fallback is never silent: it is reported by `doctor`, by `inspect --kind backends`, and by a banner in the interface's engineering view.

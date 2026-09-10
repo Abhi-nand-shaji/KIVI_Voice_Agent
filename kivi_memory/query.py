@@ -48,22 +48,76 @@ FORGET_PATTERNS = (
 )
 
 
+# A follow-up is a question that cannot stand on its own. Detecting one is
+# grammar, not vocabulary: it is short, and it opens with a word that points
+# back at something already said. "Why?" after "What am I using for the
+# prototype?" is a question about the prototype; routed on its own it is a
+# question about nothing, and the router will pick whichever intent shares a
+# stopword with it.
+FOLLOWUP_OPENERS = (
+    "why", "why not", "how come", "how so", "and", "then", "so", "because",
+    "which one", "that one", "elaborate", "tell me more", "go on", "explain",
+    "since when", "what else", "who", "when", "where", "how",
+)
+
+
 class QueryService:
-    """Everything `KiviMemoryEngine.ask` does, kept out of the engine."""
+    """Everything `KiviMemoryEngine.ask` does, kept out of the engine.
+
+    Holds exactly one piece of conversational state: the previous turn, used to
+    expand a follow-up like "Why?" into something retrievable. It is a single
+    slot rather than a transcript because that is all the read path needs, and
+    a longer history would be a second memory store with none of this one's
+    guarantees.
+    """
 
     def __init__(self, engine) -> None:
         self.engine = engine
+        # (query, [claims cited in the answer]) from the previous ask().
+        self._last_turn: tuple[str, list[str]] | None = None
 
+    def _expand_followup(self, query: str) -> tuple[str, str | None]:
+        """Return (text to route and retrieve on, what it was resolved against).
+
+        The displayed query is never rewritten - the user sees what they typed,
+        and the resolution is reported in `intent.resolved_from` so a follow-up
+        answer can be traced back to the turn it depended on.
+        """
+        if self._last_turn is None:
+            return query, None
+        stripped = query.lower().strip().rstrip("?.!")
+        # Longest first, so "why not" wins over "why" and its second word is
+        # not mistaken for content.
+        opener = next((item for item in sorted(FOLLOWUP_OPENERS, key=len, reverse=True)
+                       if stripped == item or stripped.startswith(item + " ")), None)
+        if opener is None:
+            return query, None
+
+        # The opener alone does not make a follow-up: "Who is my manager?" also
+        # starts with "who" and is a complete question. What makes "Why?" a
+        # follow-up is that it carries no subject of its own - strip the opener
+        # and nothing contentful is left. Getting this wrong is not symmetric:
+        # a missed follow-up leaves the query exactly as the user typed it,
+        # while a false positive drags the previous answer's words into
+        # retrieval and answers a question nobody asked.
+        remainder = tokens(stripped[len(opener):])
+        if remainder:
+            return query, None
+
+        previous_query, previous_claims = self._last_turn
+        context = " ".join([previous_query] + previous_claims)
+        return f"{query} {context}", previous_query
 
     def ask(self, query: str) -> dict[str, Any]:
         started = time.perf_counter()
         query = normalize_text(query)
-        lower = query.lower()
+        resolved, resolved_from = self._expand_followup(query)
+        lower = resolved.lower()
         with connect(self.engine.db_path) as conn:
             migrate(conn)
             known_apps = [row["app"] for row in conn.execute(
                 "SELECT DISTINCT app FROM transcripts WHERE app IS NOT NULL")]
-            intent = self.engine.router.route(query, known_apps)
+            intent = self.engine.router.route(resolved, known_apps)
             # Safety net: an unmistakable retraction outranks the router.
             if any(re.search(pattern, lower) for pattern in FORGET_PATTERNS):
                 intent.name = "correction"
@@ -75,13 +129,29 @@ class QueryService:
             elif intent.name == "ignored_audit":
                 result = self._answer_ignored(conn)
             elif intent.name == "find_transcript":
-                result = self._answer_find_transcript(conn, query, intent)
+                result = self._answer_find_transcript(conn, resolved, intent)
             else:
-                result = self._answer_from_memories(conn, query)
+                result = self._answer_from_memories(conn, resolved, asked=query)
             result["intent"] = intent.as_dict()
+            if resolved_from:
+                result["intent"]["resolved_from"] = resolved_from
         result["latency_ms"] = round((time.perf_counter() - started) * 1000, 2)
         result["query"] = query
+        self._remember_turn(query, result)
         return result
+
+    def _remember_turn(self, query: str, result: dict[str, Any]) -> None:
+        """Keep the turn only if it produced something a follow-up can hang on.
+
+        An abstention or a correction is not context: resolving "why?" against
+        "I do not have enough supported memory to answer that" would send the
+        next question chasing the previous failure.
+        """
+        if result.get("abstained") or result["intent"]["intent"] == "correction":
+            return
+        claims = [str(item.get("canonical_text") or "")
+                  for item in (result.get("used_memories") or [])][:3]
+        self._last_turn = (query, [claim for claim in claims if claim])
 
     def _answer_memory_overview(self, conn, query: str) -> dict[str, Any]:
         rows = conn.execute(
@@ -207,7 +277,9 @@ class QueryService:
             "reason": "Hybrid retrieval used app, date, approximate time, lexical overlap, and response-style memory.",
         }
 
-    def _answer_from_memories(self, conn, query: str) -> dict[str, Any]:
+    def _answer_from_memories(self, conn, query: str, asked: str | None = None) -> dict[str, Any]:
+        """`query` is what we retrieve on (follow-ups are expanded); `asked` is
+        what the person actually typed, which is what the answerer must answer."""
         scored = score_memories(
             conn, query, self.engine.config, self.engine.embedder, self.engine._embedding_for_memory)
         selected = [item.row for item in scored][:4]
@@ -221,7 +293,8 @@ class QueryService:
             )
 
         memories = [self.engine._memory_payload(conn, row) for row in selected]
-        composed = self.engine.answerer.compose(query, selected, {"style": self._style_hint(conn)})
+        composed = self.engine.answerer.compose(
+            asked or query, selected, {"style": self._style_hint(conn)})
         if composed.get("abstain"):
             return self.engine._abstain(
                 composed.get("answer") or "I do not have enough supported memory to answer that.",

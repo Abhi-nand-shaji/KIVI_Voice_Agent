@@ -85,7 +85,7 @@ All default to `auto`. Fallback is never silent — `doctor`, `inspect --kind ba
 2. the best matching frame was not confident (`--escalate-below`, default 0.70);
 3. the frames matched but account for less than `--escalate-coverage` (default 50%) of the transcript's content words.
 
-(3) is the one a plain confidence gate misses. *"My manager is Neha and I prefer detailed written feedback"* matches `possessive` at confidence 0.84 while the entire second clause is dropped — high confidence, half the sentence lost.
+(3) is the one a plain confidence gate misses: a transcript can match one frame confidently and still leave most of what was said unparsed. On the seed corpus it is the only reason 69 of the 303 escalations happen — they would all have been skipped on confidence alone.
 
 It also declines to escalate when the frames made a **positive** determination that there is nothing to remember — an ephemeral remark, or an explicit *"don't remember this"*. Escalating those would spend a call to learn nothing, and on the second would let the model overturn an instruction the frames already honoured.
 
@@ -114,7 +114,7 @@ That is exactly the condition the reviewer's corpus creates, and the evaluation 
 | On a corpus it was not written against | Before | After |
 |---|---|---|
 | Memories learned from 500 records | 8 | **23** |
-| Reviewer-style questions answered | 1 / 7 | **6 / 7** |
+| Reviewer-style questions answered | 1 / 7 | **5 / 7** |
 
 `python3 -m tests.foreign_corpus` runs this permanently. It fails the build if the system stops generalising.
 
@@ -141,7 +141,7 @@ Measured on the 500-record corpus, written into every results file:
 | External API calls | 0 | 0 (localhost) |
 | Cost | $0.00 | $0.00 |
 
-Growth is sampled ten times during ingest into a `growth_samples` table: **23 active memories from 500 dictations — 4.6 per 100, selectivity 0.954**, about 3.4 KB of database per dictation. Memory grows far more slowly than the log, which is the whole claim — Kivi is not keeping a copy of what you said.
+Growth is sampled ten times during ingest into a `growth_samples` table: **22 active memories from 500 dictations — 4.4 per 100, selectivity 0.956**, about 3.4 KB of database per dictation. Memory grows far more slowly than the log, which is the whole claim — Kivi is not keeping a copy of what you said.
 
 Caching keeps the model path affordable: the extraction prompt deliberately omits the timestamp so repeated dictations are content-addressable, taking the corpus from 578 calls to 233.
 
@@ -149,7 +149,7 @@ Caching keeps the model path affordable: the extraction prompt deliberately omit
 
 `python3 -m kivi_memory calibrate` grid-searches the three admission thresholds across 60 configurations and reports the surface with a per-threshold sensitivity breakdown.
 
-The first version of this reported **FLAT** — every setting scored identically, meaning the evaluation could not falsify the thresholds at all. That was a finding about the evaluation, not a validation of the numbers. Adding the labelled admission set and widening the grid fixed it: scores now range **17–19 across 60 settings**, so `best` is a defensible choice rather than three constants someone liked. The tool still prints its own verdict, and will say FLAT again if the surface ever stops discriminating.
+The first version of this reported **FLAT** — every setting scored identically, meaning the evaluation could not falsify the thresholds at all. That was a finding about the evaluation, not a validation of the numbers. Adding the labelled admission set and widening the grid fixed it: scores now range **18–20 across 60 settings**, so `best` is a defensible choice rather than three constants someone liked. The tool still prints its own verdict, and will say FLAT again if the surface ever stops discriminating.
 
 ## Limitations
 
@@ -157,11 +157,11 @@ Stated plainly, because several of them are the interesting part.
 
 - **The no-model path abstains on paraphrase.** Two evaluation questions and some foreign-corpus questions fail this way. It is a real ceiling on bag-of-words retrieval, not a bug, and it is why the model path exists.
 - **The frame extractor is still a rule system.** It is domain-free now, but it only understands the sentence shapes it has frames for. Unusual phrasing is silently missed rather than mis-learned — a safe failure, not a harmless one. `--extractor cascade` is the mitigation: it detects the miss and escalates, rather than requiring a human to notice.
-- **The cascade's cost saving is corpus-dependent.** 49% here; a corpus with more parseable speech saves more, one with more free-form narration saves less. `tests/cascade_curve.py` re-measures it on any corpus with `--corpus`.
+- **The cascade's cost saving is corpus-dependent.** 39% here; a corpus with more parseable speech saves more, one with more free-form narration saves less. `tests/cascade_curve.py` re-measures it on any corpus with `--corpus`.
 - **mem0 was considered and not used.** It is the closest prior art and is well-engineered. It was rejected because its update step delegates the retain/update/delete decision to the LLM, which is precisely the decision this system exists to make inspectable — and because it has no zero-install path. The controller is storage-agnostic, so adopting mem0 for extraction and retrieval while keeping decision authority here (`add(..., infer=False)`) is a config change rather than a rewrite.
 - **`OllamaNLI` is an instruct model prompted as a classifier.** It is real inference and beats the old whitelist, but a dedicated cross-encoder is better calibrated — `pip install torch transformers` and `--nli cross-encoder`.
 - **Retrieval scans all active memories.** Fine at this scale, needs an ANN index at production scale.
-- **Scopes are not unified.** A project named two ways — "the Golden Goose task" and "the Golden Goose prototype" — produces two scope slugs, and conflict detection is restricted to the same `(subject, scope)` pair. So a superseded claim under a differently-named scope survives. `tests/escalation_walkthrough.py` prints this happening rather than hiding it. The fix is scope clustering by embedding similarity; it is not implemented.
+- **Scopes are still not unified, though they no longer block deduplication.** A project named two ways — "the Golden Goose task" and "the Golden Goose prototype" — still produces two scope slugs. Conflict detection used to be restricted to the same `(subject, scope)` pair, so a claim under a differently-named scope was invisible; the controller's neighbourhood is now scoped to the subject only, with same-scope as a ranking bonus, and `find_near_duplicate` merges same-relation claims across scopes with no model. What is still missing is clustering the slugs themselves, so the two scope names remain distinct in the audit trail.
 - **NLI may only archive memories for `preference`, `fact` and `project_state`.** Tasks and events are multi-valued; a model that judged two to-dos "contradictory" would quietly delete a task list. That constraint is in the controller, not the prompt.
 - **The seed corpus is synthetic and its anchors are known**, so its accuracy measures wiring and policy, not real-world extraction quality. `tests/foreign_corpus.py` exists because of this.
 - **The interface has no audio.** Dictation is typed. The assignment does not require speech recognition, and nothing downstream depends on where the text came from.
@@ -206,7 +206,7 @@ kivi_memory/
   calibration.py  threshold grid search
   seed.py         the fixed-seed 500-record corpus
 web/              the interface
-tests/            fake_ollama.py, run_llm_path.py (27 checks),
+tests/            fake_ollama.py, run_llm_path.py (28 checks),
                   escalation_walkthrough.py (13 checks), foreign_corpus.py,
                   nli_demo.py, cascade_curve.py
 docs/             product positioning and vision (candidate's own writing)

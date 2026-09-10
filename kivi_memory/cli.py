@@ -5,7 +5,14 @@ import json
 from pathlib import Path
 
 from .calibration import calibrate
-from .config import ANSWERER_MODES, EXTRACTOR_MODES, KiviConfig, NLI_MODES, RETRIEVAL_MODES
+from .config import (
+    ANSWERER_MODES,
+    EXTRACTOR_MODES,
+    KiviConfig,
+    NLI_MODES,
+    RETRIEVAL_MODES,
+    ROUTER_MODES,
+)
 from .db import connect, migrate, reset_database
 from .engine import KiviMemoryEngine
 from .evaluation import compare_backends, run_evaluation
@@ -25,6 +32,9 @@ def add_backend_flags(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--nli", choices=NLI_MODES, default=None)
     group.add_argument("--retrieval", choices=RETRIEVAL_MODES, default=None)
     group.add_argument("--answerer", choices=ANSWERER_MODES, default=None)
+    group.add_argument("--router", choices=ROUTER_MODES, default=None,
+                       help="Query intent routing. Default 'auto' uses the cheap exemplar "
+                            "router so a question costs at most one model call (the answer).")
     group.add_argument("--ollama-host", dest="ollama_host", default=None)
     group.add_argument("--llm-model", dest="llm_model", default=None)
     group.add_argument("--embed-model", dest="embed_model", default=None)
@@ -45,12 +55,14 @@ def add_backend_flags(parser: argparse.ArgumentParser) -> None:
 def build_config(args: argparse.Namespace) -> KiviConfig:
     config = KiviConfig.from_env()
     if getattr(args, "deterministic", False):
-        config.apply_overrides(extractor="rule", nli="off", retrieval="lexical", answerer="template")
+        config.apply_overrides(extractor="rule", nli="off", retrieval="lexical",
+                               answerer="template", router="exemplar")
     config.apply_overrides(
         extractor=getattr(args, "extractor", None),
         nli=getattr(args, "nli", None),
         retrieval=getattr(args, "retrieval", None),
         answerer=getattr(args, "answerer", None),
+        router=getattr(args, "router", None),
         ollama_host=getattr(args, "ollama_host", None),
         llm_model=getattr(args, "llm_model", None),
         embed_model=getattr(args, "embed_model", None),
@@ -97,7 +109,7 @@ def main() -> None:
 
     calib = sub.add_parser("calibrate", help="Grid-search the controller's admission thresholds")
     calib.add_argument("--records", type=int, default=300)
-    calib.add_argument("--corpus", default="data/seed_corpus.jsonl")
+    calib.add_argument("--corpus", default="", help=argparse.SUPPRESS)  # trials use a temp corpus
     calib.add_argument("--out", default="data/calibration.json")
 
     inspect = sub.add_parser("inspect", help="Print database state as JSON")

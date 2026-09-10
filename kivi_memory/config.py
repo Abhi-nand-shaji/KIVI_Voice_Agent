@@ -33,7 +33,8 @@ def _env_int(name: str, default: int) -> int:
 EXTRACTOR_MODES = ("rule", "llm", "hybrid", "cascade", "auto")
 NLI_MODES = ("off", "llm", "cross-encoder", "auto")
 RETRIEVAL_MODES = ("lexical", "hybrid", "auto")
-ANSWERER_MODES = ("template", "llm", "auto")
+ANSWERER_MODES = ("template", "llm", "cascade", "auto")
+ROUTER_MODES = ("exemplar", "llm", "auto")
 
 
 @dataclass
@@ -43,6 +44,13 @@ class KiviConfig:
     nli: str = "auto"
     retrieval: str = "auto"
     answerer: str = "auto"
+    # Query routing is a five-way classification over a short string. The
+    # exemplar router does it in microseconds; the LLM router costs a whole
+    # model call per question, which on a local 7B is tens of seconds and was
+    # the largest single component of query latency. `auto` therefore means
+    # "cheap", and the model is spent on the one step where reasoning across
+    # several memories actually earns it: composing the answer.
+    router: str = "auto"
 
     # --- model transport ---------------------------------------------------
     # Default: a local Ollama daemon, no key, nothing leaves the machine.
@@ -61,6 +69,14 @@ class KiviConfig:
     # --- generation --------------------------------------------------------
     temperature: float = 0.0
     num_ctx: int = 4096
+    # How long Ollama keeps the model resident after a call. The default is 5
+    # minutes, so an idle session pays a full reload on its next question -
+    # measured at 15-16 s on a 7B, against ~10 s for the generation itself.
+    # Nothing else in the latency budget is worth that much: capping
+    # `num_predict` and shrinking `num_ctx` were both measured at ~0% (a 26
+    # token answer took 10.5 s at num_ctx=4096 and 10.9 s at num_predict=64 -
+    # CPU inference on 7.6B parameters is the floor, not the context size).
+    keep_alive: str = "30m"
     request_timeout: float = 120.0
     health_timeout: float = 3.0
     max_retries: int = 2
@@ -90,13 +106,36 @@ class KiviConfig:
     escalate_coverage: float = 0.50
 
     # --- retrieval weights -------------------------------------------------
-    w_lexical: float = 0.55
+    # `w_lexical` and `w_semantic` are both applied to a [0, 1] quantity now
+    # (query coverage and cosine), so the two numbers are directly comparable
+    # and mean what they look like they mean.
+    w_lexical: float = 1.60
     w_semantic: float = 1.60
     w_confidence: float = 0.35
     w_utility: float = 0.45
     tentative_penalty: float = 0.25
     retrieval_floor: float = 0.75
     answer_threshold: float = 1.10
+    # Noise floor on idf-weighted query coverage: at or below this, the memory
+    # and the question have effectively nothing in common. Deliberately not a
+    # relevance threshold - see the note in `retrieval.score_memories`.
+    min_query_coverage: float = 0.0
+    # Cosine below which a dense embedding is saying nothing.
+    #
+    # Dense vectors have a high similarity floor: with `nomic-embed-text` two
+    # unrelated sentences still score ~0.45. Fed straight into
+    # `w_semantic * cosine` that is a near-constant +0.7 on EVERY memory, which
+    # put the worst possible match at 1.52 against an answer threshold of 1.10 -
+    # abstention became unreachable and "What is my passport number?" got
+    # answered. Measured on the seed corpus: answerable questions peak at
+    # 0.64-0.76, unanswerable ones at 0.45-0.46.
+    #
+    # Centring on the corpus mean was tried and is wrong - the passport question
+    # has a HIGHER z-score (2.74) than a genuinely answerable one (1.35),
+    # because a query unrelated to everything still has one nearest neighbour.
+    # The absolute value is what carries the signal. This number is a property
+    # of the embedding model, so it moves if `embed_model` does.
+    semantic_floor: float = 0.55
 
     # --- caching -----------------------------------------------------------
     cache_path: str = "data/llm_cache.db"
@@ -111,6 +150,7 @@ class KiviConfig:
             nli=_env("KIVI_NLI", "auto"),
             retrieval=_env("KIVI_RETRIEVAL", "auto"),
             answerer=_env("KIVI_ANSWERER", "auto"),
+            router=_env("KIVI_ROUTER", "auto"),
             ollama_host=_env("KIVI_OLLAMA_HOST", "http://127.0.0.1:11434"),
             llm_model=_env("KIVI_LLM_MODEL", "qwen2.5:7b-instruct"),
             embed_model=_env("KIVI_EMBED_MODEL", "nomic-embed-text"),
@@ -120,6 +160,7 @@ class KiviConfig:
             escalate_coverage=_env_float("KIVI_ESCALATE_COVERAGE", 0.50),
             temperature=_env_float("KIVI_TEMPERATURE", 0.0),
             num_ctx=_env_int("KIVI_NUM_CTX", 4096),
+            keep_alive=_env("KIVI_KEEP_ALIVE", "30m"),
             request_timeout=_env_float("KIVI_REQUEST_TIMEOUT", 120.0),
             cache_path=_env("KIVI_CACHE_PATH", "data/llm_cache.db"),
             api_style=_env("KIVI_API_STYLE", "ollama"),
@@ -159,6 +200,7 @@ class KiviConfig:
             "nli": self.nli,
             "retrieval": self.retrieval,
             "answerer": self.answerer,
+            "router": self.router,
             "ollama_host": self.ollama_host,
             "llm_model": self.llm_model,
             "embed_model": self.embed_model,

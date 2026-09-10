@@ -144,18 +144,44 @@ def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
     return conn
 
 
-def migrate(conn: sqlite3.Connection) -> None:
+# Databases this process has already migrated. `migrate()` is called on every
+# ingest_record and every read view, and each call ran a full `executescript`
+# of the schema plus a PRAGMA per migrated table - 210 executescripts for a
+# 200-record ingest. The schema is `CREATE TABLE IF NOT EXISTS` throughout, so
+# running it once per file per process is equivalent and measurably cheaper.
+# `reset_database` clears the entry, so a dropped file is migrated again.
+_MIGRATED: set[str] = set()
+
+
+def migrate(conn: sqlite3.Connection, force: bool = False) -> None:
+    key = _database_key(conn)
+    if not force and key is not None and key in _MIGRATED:
+        return
     conn.executescript(SCHEMA)
     _ensure_columns(conn)
     conn.commit()
+    if key is not None:
+        _MIGRATED.add(key)
+
+
+def _database_key(conn: sqlite3.Connection) -> str | None:
+    """Absolute path of the connection's main database, or None if in-memory."""
+    try:
+        for row in conn.execute("PRAGMA database_list"):
+            if row[1] == "main":
+                return str(Path(row[2]).resolve()) if row[2] else None
+    except sqlite3.Error:
+        return None
+    return None
 
 
 def reset_database(db_path: str | Path = DEFAULT_DB_PATH) -> None:
     path = Path(db_path)
+    _MIGRATED.discard(str(path.resolve()))
     if path.exists():
         path.unlink()
     conn = connect(path)
     try:
-        migrate(conn)
+        migrate(conn, force=True)
     finally:
         conn.close()

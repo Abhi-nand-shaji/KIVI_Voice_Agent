@@ -85,7 +85,11 @@ def main() -> int:
             corpus_path=str(tmp / "corpus.jsonl"),
             out_path=str(tmp / "llm.json"),
             records=500,
-            config=make_config(tmp, extractor="llm", nli="llm", retrieval="hybrid", answerer="llm"),
+            # `router="llm"` is explicit: routing defaults to the cheap
+            # exemplar router now, so this run has to opt in to keep covering
+            # the LLM routing path. The check below pins the default.
+            config=make_config(tmp, extractor="llm", nli="llm", retrieval="hybrid",
+                               answerer="llm", router="llm"),
         )
         summary = llm["summary"]
         check("llm path: extractor is the model, not the rules",
@@ -120,6 +124,19 @@ def main() -> int:
         check("llm path: NLI actually ran",
               summary["database"]["decisions_with_nli"] > 0,
               f"{summary['database']['decisions_with_nli']} decisions carry an NLI label")
+
+        # A question must not cost more model calls than the one that composes
+        # the answer. Routing is a five-way choice over a short string; paying a
+        # whole generation for it doubled query latency and bought nothing the
+        # abstention gate does not already cover.
+        from kivi_memory.engine import KiviMemoryEngine as _Engine  # noqa: PLC0415
+        cheap = _Engine(str(tmp / "cheap.db"),
+                        make_config(tmp, extractor="llm", nli="llm",
+                                    retrieval="hybrid", answerer="llm"))
+        check("llm path: routing is cheap by default - one model call per question",
+              cheap.router.describe()["backend"].startswith("exemplar"),
+              f"router={cheap.router.describe()['backend']}, answerer="
+              f"{cheap.answerer.describe()['backend']}")
 
         # 3 -- contradiction outside the whitelist ---------------------------
         # `based_in` IS whitelisted, so use a predicate that is not: the fake

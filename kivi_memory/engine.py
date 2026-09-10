@@ -178,16 +178,28 @@ class KiviMemoryEngine:
         return report
 
     def ingest_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
+        """Ingest a corpus on one connection, committing in batches.
+
+        This used to call `ingest_record` per record, which opened a
+        connection, re-ran `migrate`, and committed - one fsync per dictation.
+        On the 500-record corpus the commits alone dominated the wall clock.
+        The decision path is byte-for-byte identical; only the transaction
+        boundary moved.
+        """
         started = time.perf_counter()
         processed = 0
         decisions = 0
         sample_every = max(1, len(records) // 10) if records else 1
-        for record in records:
-            result = self.ingest_record(record)
-            processed += 1
-            decisions += len(result["decisions"])
-            if processed % sample_every == 0 or processed == len(records):
-                self.sample_growth()
+        with connect(self.db_path) as conn:
+            migrate(conn)
+            for record in records:
+                result = self._ingest_one(conn, record)
+                processed += 1
+                decisions += len(result["decisions"])
+                if processed % sample_every == 0 or processed == len(records):
+                    conn.commit()
+                    self._sample_growth(conn)
+            conn.commit()
         return {
             "processed": processed,
             "decisions": decisions,
@@ -195,27 +207,34 @@ class KiviMemoryEngine:
         }
 
     def ingest_record(self, record: dict[str, Any]) -> dict[str, Any]:
+        """Ingest exactly one record, in its own transaction."""
+        with connect(self.db_path) as conn:
+            migrate(conn)
+            result = self._ingest_one(conn, record)
+            conn.commit()
+        return result
+
+    def _ingest_one(self, conn, record: dict[str, Any]) -> dict[str, Any]:
+        """The write path for one record. Does not commit - the caller owns
+        the transaction boundary, so a corpus can be ingested in batches."""
         normalized = self._normalize_record(record)
         candidates, ignored_reasons = self.extractor.extract(normalized)
         decisions = []
-        with connect(self.db_path) as conn:
-            migrate(conn)
-            self._upsert_transcript(conn, normalized)
-            for candidate in candidates:
-                decisions.append(self._apply_candidate(conn, normalized, candidate))
-            if not candidates:
-                reason = ignored_reasons[0] if ignored_reasons else "No durable memory candidate."
-                decisions.append(self._record_decision(
-                    conn,
-                    normalized["id"],
-                    "NO_OP",
-                    None,
-                    {"ignored_text": snippet(normalized["formatted_text"]), "kind": "ignored"},
-                    reason,
-                    0.0,
-                    0.0,
-                ))
-            conn.commit()
+        self._upsert_transcript(conn, normalized)
+        for candidate in candidates:
+            decisions.append(self._apply_candidate(conn, normalized, candidate))
+        if not candidates:
+            reason = ignored_reasons[0] if ignored_reasons else "No durable memory candidate."
+            decisions.append(self._record_decision(
+                conn,
+                normalized["id"],
+                "NO_OP",
+                None,
+                {"ignored_text": snippet(normalized["formatted_text"]), "kind": "ignored"},
+                reason,
+                0.0,
+                0.0,
+            ))
         return {"record_id": normalized["id"], "decisions": decisions}
 
     # -- dictation mode -----------------------------------------------------
@@ -327,34 +346,39 @@ class KiviMemoryEngine:
 
     def sample_growth(self) -> dict[str, Any]:
         """Record one point on the growth curve."""
-        from pathlib import Path as _Path  # noqa: PLC0415
-
         with connect(self.db_path) as conn:
             migrate(conn)
-            counts = {
-                "transcripts": conn.execute("SELECT count(*) n FROM transcripts").fetchone()["n"],
-                "memories": conn.execute("SELECT count(*) n FROM memories").fetchone()["n"],
-                "active_memories": conn.execute(
-                    "SELECT count(*) n FROM memories WHERE status IN ('active','tentative')").fetchone()["n"],
-                "decisions": conn.execute("SELECT count(*) n FROM decisions").fetchone()["n"],
-                "evidence_rows": conn.execute("SELECT count(*) n FROM memory_evidence").fetchone()["n"],
-                "embedding_rows": conn.execute("SELECT count(*) n FROM embeddings").fetchone()["n"],
-            }
-            try:
-                db_bytes = _Path(self.db_path).stat().st_size
-            except OSError:
-                db_bytes = 0
-            conn.execute(
-                """
-                INSERT INTO growth_samples(
-                    transcripts, memories, active_memories, decisions,
-                    evidence_rows, embedding_rows, db_bytes)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (counts["transcripts"], counts["memories"], counts["active_memories"],
-                 counts["decisions"], counts["evidence_rows"], counts["embedding_rows"], db_bytes),
-            )
+            result = self._sample_growth(conn)
             conn.commit()
+        return result
+
+    def _sample_growth(self, conn) -> dict[str, Any]:
+        """One growth-curve point on a caller-owned connection. Does not commit."""
+        from pathlib import Path as _Path  # noqa: PLC0415
+
+        counts = {
+            "transcripts": conn.execute("SELECT count(*) n FROM transcripts").fetchone()["n"],
+            "memories": conn.execute("SELECT count(*) n FROM memories").fetchone()["n"],
+            "active_memories": conn.execute(
+                "SELECT count(*) n FROM memories WHERE status IN ('active','tentative')").fetchone()["n"],
+            "decisions": conn.execute("SELECT count(*) n FROM decisions").fetchone()["n"],
+            "evidence_rows": conn.execute("SELECT count(*) n FROM memory_evidence").fetchone()["n"],
+            "embedding_rows": conn.execute("SELECT count(*) n FROM embeddings").fetchone()["n"],
+        }
+        try:
+            db_bytes = _Path(self.db_path).stat().st_size
+        except OSError:
+            db_bytes = 0
+        conn.execute(
+            """
+            INSERT INTO growth_samples(
+                transcripts, memories, active_memories, decisions,
+                evidence_rows, embedding_rows, db_bytes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (counts["transcripts"], counts["memories"], counts["active_memories"],
+             counts["decisions"], counts["evidence_rows"], counts["embedding_rows"], db_bytes),
+        )
         return {**counts, "db_bytes": db_bytes}
 
     def growth(self) -> dict[str, Any]:

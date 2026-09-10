@@ -162,7 +162,13 @@ class RuleExtractor:
             return f"User mentioned a {object_}."
         if predicate == "uses_tool":
             project = scope.replace("project:", "").replace("_", " ")
-            return f"For {project}, user is using {readable}."
+            # Subject-first, so `core.to_second_person` can shift it. Written
+            # as "For {project}, user is using X." the sentence does not start
+            # with "user", so the person-shift silently passed it through and
+            # the interface answered "For golden goose prototype, user is
+            # using Python." - a memory product talking about the person in the
+            # third person, to their face.
+            return f"User is using {readable} for {project}."
         if predicate == "current_focus_is":
             return f"User's current focus is {object_}."
         if predicate.startswith("instructed_not_to_"):
@@ -178,7 +184,9 @@ class RuleExtractor:
         if predicate.endswith("_is"):
             attribute = predicate[:-3].replace("_", " ")
             return f"User's {attribute} is {readable}."
-        return f"User: {predicate.replace('_', ' ')} {object_}."
+        # Same reason: "User: uses language python." does not start with
+        # "user " (the colon breaks it), so it reached the user unshifted.
+        return f"User {predicate.replace('_', ' ')} {object_}."
 
     def _extract_due_date(self, lower: str, created_at: str | None) -> str | None:
         if not created_at:

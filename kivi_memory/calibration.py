@@ -38,7 +38,7 @@ CALIBRATION_GRID = {
 
 def calibrate(
     db_path: str = "data/kivi.db",
-    corpus_path: str = "data/seed_corpus.jsonl",
+    corpus_path: str = "",   # unused: each trial generates its own, in a temp dir
     out_path: str = "data/calibration.json",
     records: int = 300,
     config: KiviConfig | None = None,
@@ -67,7 +67,12 @@ def calibrate(
             trial = KiviConfig(**{**base.__dict__, **settings})
             run = run_evaluation(
                 db_path=f"{tmp}/trial.db",
-                corpus_path=corpus_path,
+                # Into the temp dir, not the shared corpus path. Every trial
+                # regenerates the corpus at `records` size, so pointing this at
+                # data/seed_corpus.jsonl meant `calibrate --records 200`
+                # silently replaced the committed 500-record corpus with a
+                # 200-record one. Nothing here needs to outlive the sweep.
+                corpus_path=f"{tmp}/trial_corpus.jsonl",
                 out_path=f"{tmp}/trial.json",
                 records=records,
                 fresh=True,
@@ -84,8 +89,14 @@ def calibrate(
                 "controller_checks": summary["controller_checks"]["passed"],
                 "memories": memories,
                 "selectivity": round(1 - memories / transcripts, 4),
+                "admission_checks": summary["admission_checks"]["passed"],
+                # All three families. The admission cases were omitted here,
+                # so a trial that lost three checks reported one failing id -
+                # and the admission set is precisely what was added to stop the
+                # surface coming out flat, i.e. the part worth seeing fail.
                 "failing": [case["id"] for case in run["cases"] if not case["passed"]]
-                           + [case["id"] for case in run["controller_cases"] if not case["passed"]],
+                           + [case["id"] for case in run["controller_cases"] if not case["passed"]]
+                           + [case["id"] for case in run["admission_cases"] if not case["passed"]],
             })
 
     results.sort(key=lambda item: (item["passed"], item["selectivity"]), reverse=True)
@@ -115,10 +126,26 @@ def calibrate(
             "tentative, a weak conflict that must not supersede."
         )
     else:
+        # A dimension whose every value scores identically is unfalsifiable even
+        # when the surface as a whole discriminates, and the FLAT verdict only
+        # fires when EVERY setting ties. Say which thresholds this evaluation
+        # cannot actually defend.
+        flat_axes = [key for key, values in sensitivity.items() if len(set(values.values())) == 1]
+        untested = [key for key in keys if getattr(KiviConfig(), key) not in CALIBRATION_GRID[key]]
         verdict = (
             f"Scores ranged {min(scores)}-{max(scores)} across {len(results)} settings; the "
             "surface discriminates and `best` is a defensible choice."
         )
+        if flat_axes:
+            verdict += (
+                f" NOTE: {', '.join(flat_axes)} scored identically at every value tested, so this "
+                "evaluation does not falsify it - treat the shipped value there as unvalidated."
+            )
+        if untested:
+            verdict += (
+                f" NOTE: the shipped value of {', '.join(untested)} is not a point in the grid, so "
+                "it was never evaluated; add it to CALIBRATION_GRID before citing this as support."
+            )
 
     payload = {
         "verdict": verdict,

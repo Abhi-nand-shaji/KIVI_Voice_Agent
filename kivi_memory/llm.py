@@ -243,6 +243,7 @@ class OllamaClient:
                 "num_ctx": self.config.num_ctx,
                 "seed": 7,
             },
+            "keep_alive": self.config.keep_alive,
             "format": schema if schema else "json",
         }
 
@@ -310,7 +311,7 @@ class OllamaClient:
         try:
             response = self._post(
                 "/api/embed",
-                {"model": model, "input": texts},
+                {"model": model, "input": texts, "keep_alive": self.config.keep_alive},
                 self.config.request_timeout,
             )
             vectors = response.get("embeddings")
@@ -376,7 +377,7 @@ class OpenAICompatibleClient(OllamaClient):
         # Translate the Ollama-shaped calls the rest of the code makes.
         if path == "/api/chat":
             path = "/chat/completions"
-            payload = {
+            payload = {  # keep_alive is Ollama-only; dropped here on purpose
                 "model": payload["model"],
                 "messages": payload["messages"],
                 "temperature": payload.get("options", {}).get("temperature", 0),

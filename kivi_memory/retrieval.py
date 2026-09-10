@@ -9,10 +9,17 @@ controller rather than by any model:
           + w_utility   * utility
           - tentative_penalty                # if the memory is provisional
 
-`overlap` is an unbounded integer count while `cosine` is in [0, 1], which is
-why `w_semantic` (1.60) is numerically larger than `w_lexical` (0.55) - they are
-weights on different scales, not a statement that meaning matters three times
-as much as words.
+`cosine` is not raw cosine: it is rescaled above `semantic_floor`, because a
+dense embedding scores ~0.45 between two unrelated sentences and that constant
+lift is enough on its own to defeat the abstention gate. See `KiviConfig`.
+
+`overlap` is the fraction of the QUESTION's content words the memory accounts
+for, so both it and `cosine` are in [0, 1] and their weights are directly
+comparable. It used to be an unbounded token count, which made the weights live
+on different scales and - more importantly - made `answer_threshold` mean
+different things for a three-word question and a fifteen-word one. A memory
+sharing one generic word with a long question could clear the gate on raw count
+alone; now it has to account for a real share of what was asked.
 
 The decay term is the reason `decay_rate` exists on every row. Confidence is
 not a fixed number: it erodes with the age of the most recent supporting
@@ -28,6 +35,7 @@ answer from whatever ranked highest.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable
@@ -74,6 +82,49 @@ def memory_text(row: Any) -> str:
     ])
 
 
+def inverse_document_frequency(texts: list[set[str]]) -> dict[str, float]:
+    """How discriminative each token is across the stored memories.
+
+    Plain overlap counting treats every shared word alike, and that is what
+    made retrieval answer the wrong question. Asking "what do I know about my
+    Kivi memory project" shares `project` with seven different memories and
+    shares nothing with any of them uniquely; asking "what response style do I
+    prefer" shares `prefer` with four. Raw coverage ranks the first match
+    higher (2 shared words out of 4, versus 1 out of 3) even though its shared
+    words carry almost no information.
+
+    Weighting by `log(1 + N / (1 + df))` says the obvious thing instead: a word
+    that appears in most memories cannot tell them apart, so matching on it is
+    weak evidence. This is a property of the corpus, computed at query time -
+    there is no list of important words anywhere.
+    """
+    total = len(texts)
+    frequency: dict[str, int] = {}
+    for text_tokens in texts:
+        for token in text_tokens:
+            frequency[token] = frequency.get(token, 0) + 1
+    return {
+        token: math.log(1.0 + total / (1.0 + count))
+        for token, count in frequency.items()
+    }
+
+
+def weighted_coverage(query_tokens: set[str], other: set[str], idf: dict[str, float]) -> float:
+    """Share of the query's *information* the other text accounts for, in [0, 1].
+
+    Falls back to unweighted coverage when the query has no token the corpus
+    has ever seen, which is the case where idf carries no signal anyway.
+    """
+    if not query_tokens:
+        return 0.0
+    default = max(idf.values(), default=1.0)
+    mass = sum(idf.get(token, default) for token in query_tokens)
+    if mass <= 0.0:
+        return 0.0
+    matched = sum(idf.get(token, default) for token in query_tokens & other)
+    return matched / mass
+
+
 def score_memories(
     conn,
     query: str,
@@ -86,7 +137,11 @@ def score_memories(
 
     Rows scoring at or below `retrieval_floor` are dropped entirely rather than
     returned with a low score, so the caller cannot accidentally answer from
-    something the policy already rejected.
+    something the policy already rejected. Lexical overlap is weighted by how
+    discriminative each shared word is across the memory set, so confidence and
+    utility - which are properties of the memory, not of its fit to this
+    question - can no longer carry a barely-related row over the threshold on a
+    single common word.
     """
     rows = conn.execute(
         "SELECT * FROM memories WHERE status IN ('active', 'tentative')"
@@ -97,15 +152,30 @@ def score_memories(
     query_vector = embedder.embed_one(query) if semantic else None
     now = now or datetime.utcnow()
 
+    row_tokens = [tokens(memory_text(row)) for row in rows]
+    idf = inverse_document_frequency(row_tokens)
+
     scored: list[ScoredMemory] = []
-    for row in rows:
-        overlap = len(q_tokens & tokens(memory_text(row)))
+    for row, memory_tokens in zip(rows, row_tokens):
+        overlap = weighted_coverage(q_tokens, memory_tokens, idf)
         conf_eff = effective_confidence(
             row["confidence"], row["decay_rate"], row["recurrence"], row["last_seen_at"], now
         )
         similarity = 0.0
         if query_vector is not None:
-            similarity = max(0.0, cosine(query_vector, embedding_for_memory(conn, row)))
+            raw = cosine(query_vector, embedding_for_memory(conn, row))
+            # Rescale so that "no better than an unrelated sentence" contributes
+            # zero, rather than the constant lift a raw cosine gives every row.
+            floor = config.semantic_floor
+            similarity = max(0.0, (raw - floor) / (1.0 - floor)) if floor < 1.0 else 0.0
+
+        # Noise floor only. A flat coverage threshold was tried here and is the
+        # wrong instrument: the bad match in the motivating example had HIGHER
+        # raw coverage (0.50) than the good one (0.33). Specificity is what
+        # separates them, so that job belongs to the idf weighting above and to
+        # `answer_threshold`; this just drops rows with nothing in common.
+        if overlap <= config.min_query_coverage and similarity <= 0.0:
+            continue
 
         score = (
             overlap * config.w_lexical

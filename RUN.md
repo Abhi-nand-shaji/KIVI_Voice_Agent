@@ -148,14 +148,14 @@ python3 -m kivi_memory --deterministic evaluate --records 500 --out data/evaluat
 
 Runs the complete pipeline — generate corpus, ingest, ask, grade — and writes full results. About 4 seconds.
 
-Expected on the deterministic path: **20/21** (5/6 answer checks, 10/10 controller checks, 5/5 admission checks). The one answer miss is real and documented in the README: a bag-of-words retriever cannot bridge "response style" to "concise technical explanations". The system abstains rather than guessing. Drop `--deterministic` to run with the model backends.
+Expected on the deterministic path: **20/21** (5/6 answer checks, 10/10 controller checks, 5/5 admission checks). The one answer miss is real and documented in the README: a bag-of-words retriever cannot bridge "assignment" to "internship task". The system abstains rather than guessing. Drop `--deterministic` to run with the model backends.
 
 Related commands:
 
 ```bash
 python3 -m kivi_memory evaluate --compare --records 500   # deterministic vs local model, same corpus
 python3 -m kivi_memory --deterministic calibrate --records 200   # grid-search the controller thresholds
-python3 -m tests.run_llm_path                             # 27 checks, exercises the model paths with no model installed
+python3 -m tests.run_llm_path                             # 28 checks, exercises the model paths with no model installed
 python3 -m tests.cascade_curve                            # how often the cascade needs the model, and why
 python3 -m tests.escalation_walkthrough                   # the cascade end to end: 6 dictations, 4 questions, 13 checks
 python3 -m tests.foreign_corpus                           # ingest a DIFFERENT user's 500 records and answer questions about them
@@ -255,7 +255,7 @@ python3 -m kivi_memory --nli cross-encoder ask "..."    # needs torch + transfor
 | `--answerer` | `template`, `llm`, `auto` | `auto` |
 | `--deterministic` | forces all four to the no-install path | — |
 
-**`cascade` is the recommended setting when a model is available.** It runs the frames first and consults the model only when no frame matched, when the best frame was not confident (`--escalate-below`, default 0.70), or when the frames account for less than half the transcript's content words (`--escalate-coverage`, default 0.50). On the seed corpus that is 303 model calls instead of 500 — 39% fewer — for the same coverage. It never escalates a transcript the person explicitly asked not to remember.
+**`cascade` is the recommended setting when a model is available.** It runs the frames first and consults the model only when no frame matched, when the best frame was not confident (`--escalate-below`, default 0.70), or when the frames account for less than half the transcript's content words (`--escalate-coverage`, default 0.50). On the seed corpus that is 303 model calls instead of 500 — 39% fewer — for the same coverage. Query-time routing is deterministic by default (`--router`), so a question costs at most one model call: the one that composes the answer. It never escalates a transcript the person explicitly asked not to remember.
 
 ```bash
 python3 -m tests.cascade_curve                    # the cost curve, no model needed

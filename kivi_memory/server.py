@@ -100,9 +100,25 @@ class KiviHandler(SimpleHTTPRequestHandler):
     # -- plumbing -----------------------------------------------------------
 
     def translate_path(self, path: str) -> str:
+        """Map a URL path to a file under `web/`, and nowhere else.
+
+        The previous version stripped leading slashes and joined - it dropped
+        `SimpleHTTPRequestHandler`'s own `..` normalisation, so a raw HTTP
+        client asking for `/../data/kivi.db` was served the memory database.
+        Browsers collapse `..` before sending, which is why it never showed up
+        in ordinary use. Resolving both sides and checking containment is the
+        check that actually holds.
+        """
         parsed = urlparse(path)
         clean = parsed.path.lstrip("/") or "index.html"
-        return str((self.web_root / clean).resolve())
+        root = self.web_root.resolve()
+        target = (root / clean).resolve()
+        if target != root and root not in target.parents:
+            # A path that cannot exist, so the base handler answers 404. Serving
+            # index.html here would return 200 for a traversal attempt, which
+            # reads like the file was found.
+            return str(root / "__outside_web_root__")
+        return str(target)
 
     def log_message(self, format: str, *args) -> None:
         return

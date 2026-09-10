@@ -33,7 +33,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .config import KiviConfig
-from .core import cosine, normalize_text, tokens
+from .core import cosine, normalize_text, overlap_ratio, tokens
 from .llm import OllamaClient
 
 
@@ -74,6 +74,12 @@ EXEMPLARS: dict[str, list[str]] = {
         "remove that memory",
     ],
 }
+
+# Intents whose handlers answer WITHOUT passing through the retrieval
+# abstention gate: they read the decision log or dump the memory list, so a
+# misroute produces a confident answer to a question nobody asked. They
+# therefore have to clear a higher bar than "closest exemplar wins".
+META_INTENTS = ("ignored_audit", "memory_overview", "correction")
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
@@ -248,6 +254,12 @@ class EmbeddingIntentRouter(BaseIntentRouter):
             for intent, examples in EXEMPLARS.items()
         }
 
+    # A meta intent has to beat this outright, not merely come first.
+    META_FLOOR = 0.42
+    # Below this nothing matched; below this margin two intents tied.
+    FLOOR = 0.18
+    MARGIN = 0.08
+
     def route(self, query: str, known_apps: list[str]) -> Intent:
         query_vector = self.embedder.embed_one(query)
         query_tokens = tokens(query)
@@ -256,19 +268,26 @@ class EmbeddingIntentRouter(BaseIntentRouter):
             best = 0.0
             for vector, example_tokens in zip(self._vectors[intent], self._tokens[intent]):
                 similarity = max(0.0, cosine(query_vector, vector))
-                if example_tokens:
-                    overlap = len(query_tokens & example_tokens) / len(example_tokens)
-                else:
-                    overlap = 0.0
+                # Normalised on the QUERY, not the exemplar. See
+                # core.overlap_ratio: dividing by the exemplar made short
+                # exemplars win on one generic shared word, which routed
+                # "What did I switch the prototype to?" to ignored_audit
+                # because it shares "did" with "what did you skip".
+                overlap = overlap_ratio(query_tokens, example_tokens)
                 best = max(best, 0.6 * similarity + 0.4 * overlap)
             scores[intent] = best
 
         name = max(scores, key=lambda key: scores[key])
         top = scores[name]
         runner_up = sorted(scores.values(), reverse=True)[1] if len(scores) > 1 else 0.0
-        # A weak or ambiguous match means "just answer the question".
-        if top < 0.18 or (top - runner_up) < 0.03:
+
+        # A weak or ambiguous match means "just answer the question", which is
+        # the only handler with an abstention gate behind it.
+        if top < self.FLOOR or (top - runner_up) < self.MARGIN:
             name, top = "memory_question", max(top, 0.2)
+        elif name in META_INTENTS and top < self.META_FLOOR:
+            name, top = "memory_question", top
+
         return Intent(name, top, self.name, {"app": self.resolve_app(query, known_apps)})
 
     def describe(self) -> dict[str, Any]:
@@ -310,11 +329,17 @@ class LlmIntentRouter(BaseIntentRouter):
 
 
 def get_router(config: KiviConfig, client: OllamaClient | None, embedder) -> BaseIntentRouter:
+    """Pick the query router.
+
+    `auto` deliberately resolves to the cheap exemplar router rather than the
+    model. Routing is a five-way choice over a short string and the exemplar
+    router does it without a network call; spending a model call here doubled
+    query latency and bought nothing the abstention gate does not already
+    cover. `--router llm` opts back in.
+    """
     fallback = EmbeddingIntentRouter(embedder)
-    if client is None or config.answerer == "template" and config.extractor == "rule":
+    if client is None or config.router in ("exemplar", "auto"):
         return fallback
-    if config.extractor == "llm" or (
-        config.extractor == "auto" and client.available() and client.has_model(config.llm_model)
-    ):
+    if config.router == "llm":
         return LlmIntentRouter(client, config, fallback)
     return fallback

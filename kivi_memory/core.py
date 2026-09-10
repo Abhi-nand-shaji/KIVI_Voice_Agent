@@ -135,7 +135,7 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
 
 
 STOPWORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
+    "a", "about", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
     "have", "he", "her", "hey", "i", "in", "into", "is", "it", "kivi",
     "me", "my", "of", "on", "or", "our", "please", "should", "that", "the",
     "this", "to", "use", "was", "we", "what", "when", "where", "who", "with",
@@ -280,6 +280,46 @@ def tokens(text: str) -> set[str]:
                 if stemmed != mapped and len(stemmed) > 2 and stemmed not in STOPWORDS:
                     values.add(stemmed)
     return values
+
+
+def overlap_ratio(query_tokens: set[str], other: set[str]) -> float:
+    """Fraction of the QUERY the other text accounts for, in [0, 1].
+
+    The denominator is deliberately the query, not the other side. Scoring
+    `|a & b| / |b|` rewards whatever is shortest: a two-token intent exemplar
+    like "what did you skip" scored 0.50 against any question containing the
+    word "did", which is how "What did I switch the prototype to?" was routed
+    to the ignored-audit handler. Normalising on the query asks the question
+    that actually matters - how much of what was asked does this cover - and is
+    a monotone rescaling per query, so ranking within one query is unchanged
+    while the number becomes comparable across queries and thresholdable.
+    """
+    if not query_tokens:
+        return 0.0
+    return len(query_tokens & other) / len(query_tokens)
+
+
+def jaccard(a: set[str], b: set[str]) -> float:
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
+
+
+def same_thing(a: str, b: str) -> bool:
+    """True when two object strings name the same thing.
+
+    Used by the controller to collapse near-duplicate memories without needing
+    a model: "concise explanation" and "concise technical explanations" are one
+    preference stated twice, not two. Containment catches the common case (one
+    phrasing is a more specific version of the other); Jaccard catches
+    reorderings. Both run on stemmed content tokens, so this is morphology
+    rather than vocabulary.
+    """
+    ta, tb = tokens(a), tokens(b)
+    if not ta or not tb:
+        return False
+    if ta <= tb or tb <= ta:
+        return True
+    return jaccard(ta, tb) >= 0.6
 
 
 def parse_dt(value: str) -> datetime:

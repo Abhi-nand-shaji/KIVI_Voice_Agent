@@ -106,6 +106,11 @@ Hard rules:
 - A memory marked "tentative" is uncertain: say so in the answer if you use it.
 - Match the user's stated response-style preference if one is provided.
 - Answer in one or two sentences unless the question asks for a list.
+- Address the user as "you". The memories are written in the third person
+  ("User prefers X", "User switched Y"); your answer must not be. Never write
+  "User ..." and never answer in the first person as though you were them -
+  "Who is my manager?" is answered "Your manager is Neha.", not "My manager is
+  Neha." and not "User's manager is Neha."
 
 Reply with JSON only:
 {"answer": "...", "abstain": false, "used_memory_ids": ["mem_..."]}"""
@@ -119,6 +124,21 @@ ANSWER_SCHEMA = {
     },
     "required": ["answer", "abstain", "used_memory_ids"],
 }
+
+
+def _second_person(answer: str) -> str:
+    """Last-resort person fix on a generated answer.
+
+    ANSWER_SYSTEM asks for second person, and a 7B model mostly complies - but
+    "mostly" is not a guarantee, and it echoed the memory's own wording
+    ("User switched the prototype to Python...") often enough to reach the
+    interface. Grounding is already enforced structurally here rather than
+    requested in the prompt; the same argument applies to talking about the
+    person in the third person to their face. `core.to_second_person` is a
+    no-op on anything that does not open with "user".
+    """
+    shifted = to_second_person(answer)
+    return shifted if shifted else answer
 
 
 class LlmAnswerer:
@@ -169,7 +189,8 @@ class LlmAnswerer:
             result["rejected_citations"] = unknown
             return result
 
-        return {"answer": answer, "abstain": False, "cited_ids": cited, "backend": self.name}
+        return {"answer": _second_person(answer), "abstain": False,
+                "cited_ids": cited, "backend": self.name}
 
     def polish(self, text: str, style_claims: list[str] | None = None) -> str:
         payload = self.client.chat_json(
@@ -219,12 +240,99 @@ class LlmAnswerer:
         )
 
 
+# Questions that ask for a reason, a change or a comparison cannot be answered
+# by reading one stored claim back - the answer has to be built ACROSS memories.
+# Grammar, not vocabulary: these are the shapes English uses to ask "why" and
+# "what changed", and none of them names anything in this corpus.
+REASONING_MARKERS = (
+    "why", "how come", "how did", "how do i", "what changed", "what has changed",
+    "compare", "versus", " vs ", "difference between", "instead of",
+    "used to", "before and after", "explain", "walk me through", "summarise",
+    "summarize", "what do i know about", "tell me about",
+)
+
+
+class CascadeAnswerer:
+    """Template first; the model only where composition is the hard part.
+
+    The same argument as `CascadeExtractor` on the write path, applied to the
+    read path. Most questions are a read-back of one stored claim - "who is my
+    manager", "what response style do I prefer" - and `TemplateAnswerer` does
+    those exactly, instantly and for free. Spending a 7B generation on them buys
+    nothing and costs ~10 s on CPU.
+
+    What the model is genuinely needed for is synthesis: a question whose answer
+    is not in any single memory but in the relationship between several of them.
+    The signal for that is the *question*, not the result set.
+
+    "More than one memory was retrieved" was tried as a second signal and is
+    wrong: `query._answer_from_memories` hands over the top four rows by design,
+    so it is true for almost every question. Measured, it escalated "Which
+    language am I using for the prototype?" - a plain read-back the template
+    answers correctly and instantly - into a 141 s generation. A signal that
+    fires on nearly everything is not a cascade.
+
+    Escalating is not answering: the LLM is still bound by the same citation
+    check, and still falls back to the template if it produces something
+    ungrounded.
+    """
+
+    name = "cascade"
+    applies_style = True
+
+    def __init__(self, template: TemplateAnswerer, llm: "LlmAnswerer", config: KiviConfig) -> None:
+        self.template = template
+        self.llm = llm
+        self.config = config
+        self.seen = 0
+        self.escalated = 0
+
+    def describe(self) -> dict[str, Any]:
+        return {
+            "backend": "cascade(template->llm)",
+            "model": self.llm.describe().get("backend"),
+            "generated": True,
+            "questions_seen": self.seen,
+            "questions_escalated": self.escalated,
+            "escalation_rate": round(self.escalated / self.seen, 3) if self.seen else 0.0,
+        }
+
+    @staticmethod
+    def needs_reasoning(query: str, rows: list[Any]) -> str | None:
+        lowered = f" {query.lower().strip()} "
+        for marker in REASONING_MARKERS:
+            if marker in lowered:
+                return f"question asks for reasoning ({marker.strip()!r})"
+        return None
+
+    def compose(self, query: str, rows: list[Any], style: dict[str, Any] | None = None) -> dict[str, Any]:
+        self.seen += 1
+        reason = self.needs_reasoning(query, rows)
+        if reason is None:
+            result = self.template.compose(query, rows, style)
+            result["backend"] = "template (no reasoning needed)"
+            return result
+        self.escalated += 1
+        result = self.llm.compose(query, rows, style)
+        result["escalated_because"] = reason
+        return result
+
+    def polish(self, text: str, style_claims: list[str] | None = None) -> str:
+        # Polishing prose IS a generation task; there is no template version of
+        # applying a stated style, so this always uses the model.
+        return self.llm.polish(text, style_claims)
+
+
 def get_answerer(config: KiviConfig, client: OllamaClient | None):
     mode = config.answerer
     if mode == "template" or client is None:
         return TemplateAnswerer()
     if mode == "llm":
         return LlmAnswerer(client, config)
+    if mode == "cascade":
+        return CascadeAnswerer(TemplateAnswerer(), LlmAnswerer(client, config), config)
+    # auto: prefer the cascade when a model is actually reachable, so simple
+    # questions stay free and only synthesis pays for a generation.
     if client.available() and client.has_model(config.llm_model):
-        return LlmAnswerer(client, config)
+        return CascadeAnswerer(TemplateAnswerer(), LlmAnswerer(client, config), config)
     return TemplateAnswerer()

@@ -9,6 +9,7 @@ thresholds in `KiviConfig`.
 The ladder, first match wins:
 
   1. exact key already stored                     -> REINFORCE
+  1b. same relation, object names the same thing  -> REINFORCE (dedup, no model)
   2. NLI says a stored memory means the same      -> REINFORCE (paraphrase merge)
   3. a stored memory contradicts it, and
      confidence >= supersede_confidence           -> UPDATE (archive the old)
@@ -33,7 +34,7 @@ from dataclasses import asdict
 from typing import Any
 
 from .config import KiviConfig
-from .core import Candidate, clamp, cosine, is_exclusive, stable_id, utc_now
+from .core import Candidate, clamp, cosine, is_exclusive, same_thing, stable_id, utc_now
 from .nli import NLIResult
 
 
@@ -66,6 +67,14 @@ class MemoryController:
         ).fetchone()
         if existing:
             return self.update_memory(conn, record, candidate, existing)
+
+        # A near-duplicate of something already known is a reinforcement, not a
+        # second memory. Exact-key matching cannot see this ("concise
+        # explanation" vs "concise technical explanations"); token containment
+        # can, and unlike NLI it needs no model.
+        duplicate = self.find_near_duplicate(conn, candidate)
+        if duplicate is not None:
+            return self.update_memory(conn, record, candidate, duplicate)
 
         # A paraphrase of something already known is a reinforcement, not a
         # second memory. Exact-key matching cannot see this ("bangalore" vs
@@ -138,16 +147,24 @@ class MemoryController:
     def neighbourhood(self, conn, candidate: Candidate, limit: int = 6) -> list[Any]:
         """Stored memories that plausibly talk about the same thing.
 
-        Restricted to the same subject and scope, then ranked by embedding
-        similarity, so NLI is asked at most `limit` questions per candidate
-        instead of once per stored memory.
+        Restricted to the same subject, then ranked by embedding similarity, so
+        NLI is asked at most `limit` questions per candidate instead of once
+        per stored memory.
+
+        Scope used to be part of the WHERE clause. That was the single largest
+        source of duplicate memories: a project mentioned as "the Golden Goose
+        task" and "the Golden Goose prototype" produces two scope slugs, and
+        restricting comparison to matching slugs meant neither NLI nor the
+        structural rule could ever see the two claims as being about one thing.
+        Scope is now a ranking bonus - same scope is evidence that two memories
+        are related, not a precondition for asking.
         """
         rows = conn.execute(
             """
             SELECT * FROM memories
-            WHERE subject=? AND scope=? AND status IN ('active', 'tentative') AND id<>?
+            WHERE subject=? AND status IN ('active', 'tentative') AND id<>?
             """,
-            (candidate.subject, candidate.scope, candidate.id),
+            (candidate.subject, candidate.id),
         ).fetchall()
         if not rows:
             return []
@@ -156,10 +173,42 @@ class MemoryController:
         for row in rows:
             similarity = cosine(query_vector, self.embedding_for_memory(conn, row))
             same_predicate = row["predicate"] == candidate.predicate
+            same_scope = row["scope"] == candidate.scope
             if similarity >= self.config.semantic_conflict_similarity or same_predicate:
-                scored.append((similarity + (0.25 if same_predicate else 0.0), row))
+                bonus = (0.25 if same_predicate else 0.0) + (0.15 if same_scope else 0.0)
+                scored.append((similarity + bonus, row))
         scored.sort(key=lambda item: item[0], reverse=True)
         return [row for _, row in scored[:limit]]
+
+    def find_near_duplicate(self, conn, candidate: Candidate) -> Any | None:
+        """The same claim, worded or scoped slightly differently.
+
+        Runs with no model at all, which is the point: NLI catches paraphrase
+        only when it is switched on, and the deterministic path was therefore
+        accumulating `prefers_explanation = "concise explanation"` alongside
+        `prefers_explanation = "concise technical explanations"` as two separate
+        preferences that never reconciled.
+
+        The test is deliberately narrow - same type, same subject, same
+        predicate, and objects that name the same thing by `core.same_thing`.
+        Two values of a genuinely multi-valued relation are left alone, because
+        merging two different to-dos would silently delete one.
+        """
+        if not is_exclusive(candidate.predicate):
+            return None
+        rows = conn.execute(
+            """
+            SELECT * FROM memories
+            WHERE memory_type=? AND subject=? AND predicate=?
+              AND status IN ('active', 'tentative') AND id<>?
+            ORDER BY recurrence DESC, confidence DESC
+            """,
+            (candidate.memory_type, candidate.subject, candidate.predicate, candidate.id),
+        ).fetchall()
+        for row in rows:
+            if same_thing(row["object"], candidate.object):
+                return row
+        return None
 
     def find_equivalent(self, conn, candidate: Candidate) -> tuple[Any | None, NLIResult | None]:
         if self.nli.name == "off":

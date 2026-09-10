@@ -331,9 +331,17 @@ FRAMES: list[Frame] = [
           "task", "current_tasks", 0.74, 0.78, 0.14, _task, "Action item stated by the user.", family="task"),
     Frame("remind", r"\bremind me (?:that |to |about )?([^.,;]{4,90})",
           "task", "current_tasks", 0.78, 0.82, 0.12, _task, "Explicit reminder request.", family="task"),
-    Frame("follow_up", r"\b(?:follow up|check in|circle back) with ([^.,;]{2,60})",
+    # Both of these capture the WHOLE verb phrase, including the verb. They
+    # used to capture only its object, and the canonical form is
+    # "User needs to {object}." - so "Follow up with Nikhil about the project
+    # evaluation cases" was stored as "User needs to nikhil about the project
+    # evaluation cases." Six of those (one per name in the seed corpus) were
+    # 27% of everything the deterministic path learned: ungrammatical, and
+    # close enough to any question in embedding space to crowd out real
+    # memories. The verb is not decoration; it is what makes the task a task.
+    Frame("follow_up", r"\b((?:follow up|check in|circle back) with [^.,;]{2,60})",
           "task", "current_tasks", 0.7, 0.76, 0.16, _task, "Follow-up commitment.", family="task"),
-    Frame("ship_by", r"\b(?:ship|send|submit|finish|deliver|complete) ([^.,;]{4,70}?) (?:before|by) [^.,;]{2,30}",
+    Frame("ship_by", r"\b((?:ship|send|submit|finish|deliver|complete) [^.,;]{4,70}?) (?:before|by) [^.,;]{2,30}",
           "task", "current_tasks", 0.78, 0.8, 0.13, _task, "Deadline-bearing commitment.", family="task"),
 
     Frame("event_with", r"\b(meeting|call|demo|sync|review|presentation|interview|standup) with ([^.,;]{2,50})",
